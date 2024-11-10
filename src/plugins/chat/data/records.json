@@ -1,0 +1,111 @@
+{
+    "2867053475": {
+        "current_model": "通义千问",
+        "chatglm": {
+            "identity": "default",
+            "records": {
+                "conversation_id": ""
+            }
+        },
+        "通义千问": {
+            "identity": "default",
+            "records": {
+                "msgid": "5517a58aaee447fda8b0c0fc5710ec04",
+                "sessionid": "d205473a91b44ca8a9269d6887c22ab7"
+            }
+        }
+    },
+    "2814322558": {
+        "current_model": "通义千问",
+        "chatglm": {
+            "identity": "default",
+            "records": {
+                "conversation_id": ""
+            }
+        },
+        "通义千问": {
+            "identity": "default",
+            "records": {
+                "msgid": "507d7759590e4bd59a97854c7b3f638c",
+                "sessionid": "4856b460e04b4e87882d518da15dbe63"
+            }
+        }
+    },
+    "2977673235": {
+        "current_model": "通义千问",
+        "chatglm": {
+            "identity": "default",
+            "records": {
+                "conversation_id": ""
+            }
+        },
+        "通义千问": {
+            "identity": "default",
+            "records": {
+                "msgid": "d81c535697de4e7eae0892e7b7ac0c9d",
+                "sessionid": "808877c40f01459bab1bb8e10e58c910"
+            }
+        }
+    },
+    "2764862605": {
+        "current_model": "通义千问",
+        "chatglm": {
+            "identity": "default",
+            "records": {
+                "conversation_id": ""
+            }
+        },
+        "通义千问": {
+            "identity": "default",
+            "records": {
+                "msgid": "3ad8a33be3604578bc989621bb446856",
+                "sessionid": "2fed7b0f81c0405d970d62c733a26130"
+            }
+        }
+    },
+    "2461136989": {
+        "current_model": "通义千问",
+        "chatglm": {
+            "identity": "default",
+            "records": {
+                "conversation_id": ""
+            }
+        },
+        "通义千问": {
+            "identity": "default",
+            "records": {
+                "msgid": "4dc77c71c4af4af4a88e623e5e166300",
+                "sessionid": "6f3b8a6b63fd488dbcc89deccf50ce1a"
+            }
+        }
+    },
+    "3779416422": {
+        "current_model": "通义千问",
+        "chatglm": {
+            "identity": "default",
+            "records": {
+                "conversation_id": ""
+            }
+        },
+        "通义千问": {
+            "identity": "default",
+            "records": {
+                "msgid": "16d300f2e7844f33a45f5bde96e86adb",
+                "sessionid": "fcfe081a3b524b43a7c2a356d46ecda9"
+            }
+        }
+    },
+    "1756000830": {
+        "current_model": "chatglm",
+        "chatglm": {
+            "identity": "default",
+            "records": {
+                "conversation_id": "6731056803feeca0320eaaca"
+            }
+        },
+        "通义千问": {
+            "identity": "default",
+            "records": {}
+        }
+    }
+}

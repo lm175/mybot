@@ -17,7 +17,7 @@ __plugin_meta__ = PluginMetadata(
     description="随机涩图",
     usage="@我 setu {keyword}",
     extra={
-        "example": "@小Q setu 小萝莉",
+        "example": "@桃子 setu 小萝莉",
     },
 )
 
