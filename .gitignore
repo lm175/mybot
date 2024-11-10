@@ -152,6 +152,3 @@ dmypy.json
 # data
 /data
 
-# env
-.env
-
