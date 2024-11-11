@@ -6,13 +6,11 @@ from nonebot.adapters.onebot.v11 import (
     PrivateMessageEvent
 )
 from nonebot.matcher import Matcher
-from nonebot.params import CommandArg, ArgPlainText, ArgStr
-from nonebot.typing import T_State
-from nonebot.adapters.onebot.v11.helpers import extract_numbers
+from nonebot.params import CommandArg, ArgPlainText
 
 import asyncio
 
-from .utils import RedeemCode, UidData, DHM, QQ_TO_UID, FORBIDDEN, serch_uid
+from .utils import RedeemCode, UidData, DHM, QQ_TO_UID, FORBIDDEN
 from .utils import load_from_json, save_to_json, load_from_txt, save_to_txt
 
 
@@ -120,33 +118,3 @@ async def _(event: PrivateMessageEvent):
         forbidden_list.remove(user_id)
         save_to_json(FORBIDDEN, forbidden_list)
     await remind_open.send('已开启提醒')
-
-
-
-
-
-cdk = on_command("cdk", priority=10, block=True)
-
-
-@cdk.handle()
-async def recieve_uid(state: T_State, arg: Message = CommandArg()):
-    nums = extract_numbers(arg)
-    if nums:
-        state['uid'] = str(int(nums[0]))
-
-
-@cdk.got('uid', prompt="请发送uid")
-async def recieve_dhm(uid = ArgStr('uid')):
-    if len(uid) != 9 and len(uid) != 12:
-        await cdk.finish("欸？应该是9或12位才对吧？")
-    uid_info = await serch_uid(int(uid))
-    if not uid_info:
-        await cdk.finish("这个uid好像不太对哦")
-
-
-@cdk.got('dhm', prompt='请发送兑换码')
-async def handle_redeem(state: T_State, dhm: str = ArgStr('dhm')):
-    await cdk.send("兑换中··")
-    redeem = await asyncio.to_thread(RedeemCode, dhm)
-    _, image = await asyncio.to_thread(redeem.redeem_for_user, state['uid'])
-    await cdk.send(MessageSegment.image(image), at_sender=True)

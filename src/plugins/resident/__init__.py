@@ -3,6 +3,7 @@
 from nonebot import on_request, on_notice
 from nonebot.adapters.onebot.v11 import Bot, NoticeEvent, FriendRequestEvent
 
+from .group_invite import *
 
 # 自动回赞
 like_me = on_notice()

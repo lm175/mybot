@@ -72,7 +72,7 @@ select = ["E", "W", "F", "UP", "C", "T", "PYI", "Q"]
 ignore = ["E402", "E501", "E711", "C901", "UP037"]
 
 [tool.pyright]
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 pythonPlatform = "All"
 typeCheckingMode = "basic"
 defineConstant = { PYDANTIC_V2 = false }

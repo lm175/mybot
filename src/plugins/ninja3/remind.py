@@ -19,7 +19,7 @@ async def _(event: GroupMessageEvent, match: Tuple = RegexGroup()):
     group_id = str(event.group_id)
     boss_name = match[0]
 
-    user_list = data["boss_name"].get(group_id)
+    user_list = data[boss_name].get(group_id)
     numbers = extract_numbers(event.get_message())
     if user_list and numbers:
         flag = False # 检查是否存在正确uid
@@ -79,7 +79,7 @@ async def _(event: GroupMessageEvent, args: Message = CommandArg()):
     if boss_name in data:
         group_id = str(event.group_id)
         user_id = event.user_id
-        user_list = data["boss_name"].get(group_id)
+        user_list = data[boss_name].get(group_id)
         if user_list and user_id in user_list:
             data[boss_name][group_id].remove(user_id)
             save_to_json(REMIND, data)
