@@ -39,7 +39,7 @@ async def _(event: GroupIncreaseNoticeEvent):
     if user_id == event.self_id:
         pass
     else:
-        message = MessageSegment.at(user_id)
+        message = MessageSegment.at(user_id) + " "
         welcom_data = GroupWelcomData(group_id)
         message += await welcom_data.get_welcom_msg()
         await inc.send(message)
