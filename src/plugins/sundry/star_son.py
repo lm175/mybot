@@ -43,7 +43,7 @@ def handler(text: str) -> T_Handler:
 
 def create_matchers():
     for text in TEXT_LIST:
-        matcher = on_command(text, priority=12)
+        matcher = on_command(f"/{text}", priority=12)
         matcher.append_handler(handler(text))
 
     random_text_matcher = on_keyword({"星星的孩子", "自研大佬"}, priority=12)

@@ -136,16 +136,19 @@ async def _(bot: Bot, event: PokeNotifyEvent):
             "๐(´,,•ω•,,｀)？",
             "反击！( ง `ω´ )۶"
         ]
-        if not event.group_id:
-            reply_list.remove("反击！( ง `ω´ )۶")
         msg = random.choice(reply_list)
         if msg == "反击！( ง `ω´ )۶":
             times = random.choices([1, 3], [4, 1], k=1)[0]
             if times == 3:
                 msg = "“ψ(｀∇´)ψ 木大木大木大木大木大！"
             await pokeme.send(msg)
-            for _ in range(times):
-                await bot.call_api("group_poke", group_id=event.group_id, user_id=event.user_id)
-                await asyncio.sleep(0.1)
+            if event.group_id:
+                for _ in range(times):
+                    await bot.call_api("group_poke", group_id=event.group_id, user_id=event.user_id)
+                    await asyncio.sleep(0.1)
+            else:
+                for _ in range(times):
+                    await bot.call_api("friend_poke", user_id=event.user_id)
+                    await asyncio.sleep(0.1)
         else:
             await pokeme.send(msg)
