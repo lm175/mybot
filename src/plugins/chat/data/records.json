@@ -107,5 +107,18 @@
             "identity": "default",
             "records": {}
         }
+    },
+    "2747277822": {
+        "current_model": "chatglm",
+        "chatglm": {
+            "identity": "default",
+            "records": {
+                "conversation_id": "673371b86cfcc1aad60b150d"
+            }
+        },
+        "通义千问": {
+            "identity": "default",
+            "records": {}
+        }
     }
 }

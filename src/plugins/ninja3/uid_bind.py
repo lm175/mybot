@@ -1,66 +1,82 @@
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Message, MessageEvent
+from nonebot.adapters.onebot.v11 import Message, MessageSegment, MessageEvent, PrivateMessageEvent
 from nonebot.params import CommandArg, ArgStr
 from nonebot.typing import T_State
 from nonebot.adapters.onebot.v11.helpers import extract_numbers, convert_chinese_to_bool
 
-import json
+from .database import GameIDs, Users, GiftCodes
+from .utils import serch_uid, get_current_uids, RedeemCode
+from .requires import async_scoped_session
+from sqlalchemy import select
 
-from .utils import load_from_json
-from .utils import UidData, QQ_TO_UID, serch_uid
-
-
+import asyncio
+from io import BytesIO
 
 uid_add = on_command("忍3绑定uid", aliases={"忍三绑定uid", "忍3绑定UID", "忍三绑定UID"}, priority=10, block=True)
 
 
 @uid_add.handle()
-async def handle_check_user(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
-    qq = event.get_user_id()
-    data = UidData(load_from_json(QQ_TO_UID))
-    user_uid_list = data.get_users_uid(qq)
-    if qq in user_uid_list and len(user_uid_list) >= 5:
-        await uid_add.finish("您绑定的uid数量已达上限")
+async def _(event: MessageEvent, session: async_scoped_session, state: T_State, arg: Message = CommandArg()):
+    user_id = event.user_id
+    if user := await session.get(Users, user_id):
+        if user.uid_nums >= 5:
+            await uid_add.finish("您绑定的uid数量已达上限")
     
-    state['data'] = data
-    nums = extract_numbers(arg)
-    if nums:
-        state['uid'] = str(int(nums[0]))
+    state['user_id'] = user_id
+    if nums := extract_numbers(arg):
+        state['game_id'] = int(nums[0])
 
 
-@uid_add.got('uid', prompt="请发送要绑定的uid")
-async def handle_check_uid(state: T_State, uid = ArgStr('uid')):
+@uid_add.got('game_id', prompt="请发送要绑定的uid")
+async def _(state: T_State, session: async_scoped_session, game_id = ArgStr('game_id')):
 
-    if len(uid) != 9 and len(uid) != 12:
+    if len(game_id) != 9 and len(game_id) != 12:
         await uid_add.finish("欸？应该是9或12位才对吧？")
-    uid = int(uid)
-    uid_info = await serch_uid(uid)
+    game_id = int(game_id)
+    uid_info = await serch_uid(game_id)
     if not uid_info:
         await uid_add.finish("这个uid好像不太对哦")
 
-    data: UidData = state['data']
-    all_uid_list = data.get_all_uids()
-    if int(uid) in all_uid_list:
-        qq = data.get_qq_from_uid(int(uid))
-        await uid_add.finish(f"{uid}已经被{qq}绑定过啦~")
+    if gameIDs := await session.get(GameIDs, game_id):
+        await uid_add.finish(f"{game_id}已经被{gameIDs.user_id}绑定过啦~")
 
+    state['game_id'] = game_id
     await uid_add.send("玩家信息:\n" + uid_info + "\n是否确认？")
 
 
 @uid_add.receive()
-async def handle_uid_add(event: MessageEvent, uid = ArgStr('uid')):
+async def _(event: MessageEvent, state: T_State, session: async_scoped_session):
     msg = event.get_message()
     if convert_chinese_to_bool(msg):
-        qq = event.get_user_id()
-        with open(QQ_TO_UID, 'r+', encoding='utf-8') as f:
-            data = UidData(json.load(f))
-            data.add_uid(qq, int(uid))
-            f.seek(0)
-            f.truncate()
-            json.dump(data.data, f, ensure_ascii=False, indent=4)
-        user_uid_list = data.get_users_uid(qq)
-        uid_str = await _list_to_text(user_uid_list)
-        await uid_add.finish(f"添加成功，当前已绑定uid:{uid_str}")
+        user_id: int = state['user_id']
+        game_id: int = state['game_id']
+
+        user = await session.get(Users, user_id)
+        if not user:
+            user = Users(user_id=user_id, uid_nums=0, need_remind=True)
+            session.add(user)
+        user.uid_nums += 1
+
+        gameID = GameIDs(game_id=game_id, user_id=user_id)
+        session.add(gameID)
+
+        uids = await get_current_uids(session, user_id)
+        uid_str = ""
+        for u in uids:
+            uid_str += f"\n{u}"
+        await uid_add.send(f"添加成功，当前已绑定uid:{uid_str}\n正在检查当前可用的兑换码··")
+
+        if res := await session.scalars(select(GiftCodes.code).where(GiftCodes.available == True)):
+            codes = res.all()
+            redeem = await asyncio.to_thread(RedeemCode, codes[0])
+            reply_msg = Message()
+            for c in codes:
+                redeem.code = c
+                tip_msg, img = await asyncio.to_thread(redeem.redeem_for_user, str(game_id))
+                reply_msg += MessageSegment.text(tip_msg) + MessageSegment.image(img)
+            await uid_add.send(reply_msg, at_sender=True)
+            
+        await session.commit()
     else:
         await uid_add.send("已取消")
 
@@ -72,58 +88,78 @@ uid_del = on_command("忍3解除绑定", aliases={"忍三解除绑定"}, priorit
 
 
 @uid_del.handle()
-async def handle_user_check(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
-    qq = event.get_user_id()
-    data = UidData(load_from_json(QQ_TO_UID))
-    if qq not in data.data:
+async def _(event: MessageEvent, session: async_scoped_session, arg: Message = CommandArg()):
+    user_id = event.user_id
+    user = await session.get(Users, user_id)
+    if not user:
         await uid_del.finish("你还没有绑定过uid呢")
     
-    nums = extract_numbers(arg)
-    user_uid_list = data.get_users_uid(qq)
-    if nums:
-        reply_text = await _handle_del_uid(qq, user_uid_list, nums)
-        await uid_del.finish(reply_text)
+    if nums := extract_numbers(arg):
+        for n in nums:
+            msg = await _handle_del_uid(session, user_id, int(n))
+        await session.commit()
+        await uid_del.finish(msg)
     else:
-        uid_str = await _list_to_text(user_uid_list)
+        uids = await get_current_uids(session, user_id)
+        uid_str = ""
+        for u in uids:
+            uid_str += f"\n{u}"
         await uid_del.send(f"请发送要删除的uid: {uid_str}")
-        state['user_uid_list'] = user_uid_list
 
 
 @uid_del.receive()
-async def handle_recieve_uid(event: MessageEvent, state: T_State):
-    nums = extract_numbers(event.get_message())
-    if not nums:
-        await uid_del.finish("已退出当前操作")
-    qq = event.get_user_id()
-    user_uid_list = state['user_uid_list']
-    reply_text = await _handle_del_uid(qq, user_uid_list, nums)
-    await uid_del.send(reply_text)
+async def _(event: MessageEvent, session: async_scoped_session):
+    if nums := extract_numbers(event.get_message()):
+        user_id = event.user_id
+        msg = await _handle_del_uid(session, user_id, int(nums[0]))
+        await session.commit()
+        await uid_del.finish(msg)
+    await uid_del.finish("已退出当前操作")
 
 
 
-async def _handle_del_uid(qq: str, user_uid_list: list[int], nums: list[float]) -> str:
-    uid = int(nums[0])
-    if uid in user_uid_list:
-        with open(QQ_TO_UID, 'r+', encoding='utf-8') as f:
-            data = UidData(json.load(f))
-            data.del_uid(qq, uid)
-            f.seek(0)
-            f.truncate()
-            json.dump(data.data, f, ensure_ascii=False, indent=4)
-        uid_list_after_del = data.data.get(qq)
-        uid_str = await _list_to_text(uid_list_after_del)
-        return f"删除成功，当前已绑定uid:{uid_str}"
-    else:
-        return f"你没有绑定过这个uid哦"
+async def _handle_del_uid(session: async_scoped_session, user_id: int, game_id: int) -> str:
+    user = await session.get(Users, user_id)
+    gameID = await session.get(GameIDs, game_id)
+    if user and gameID:
+        if gameID.user_id == user.user_id:
+            # user表
+            user.uid_nums -= 1
+            if not user.uid_nums:
+                await session.delete(user)
+            # uid表
+            await session.delete(gameID)
+            uids = await get_current_uids(session, user.user_id)
+
+            uid_str = ""
+            for u in uids:
+                uid_str += f"\n{u}"
+            return f"删除成功，当前已绑定uid:{uid_str}"
+
+    return "你没有绑定过这个uid哦"
 
 
-async def _list_to_text(user_uid_list: list[int] | None) -> str:
-    if not user_uid_list:
-        return f"\n{user_uid_list}"
-    uid_str = ""
-    for uid in user_uid_list:
-        uid_str += f"\n{uid}"
-    return uid_str
+
+
+
+
+remind_close = on_command('关闭提醒', priority=10, block=True)
+remind_open = on_command('开启提醒', priority=10, block=True)
+
+# 添加和取消提醒
+@remind_close.handle()
+async def _(event: PrivateMessageEvent, session: async_scoped_session):
+    if user := await session.get(Users, event.user_id):
+        user.need_remind = False
+        await session.commit()
+        await remind_close.send("已关闭提醒\n如需开启请发送 /开启提醒")
+
+@remind_open.handle()
+async def _(event: PrivateMessageEvent, session: async_scoped_session):
+    if user := await session.get(Users, event.user_id):
+        user.need_remind = True
+        await session.commit()
+        await remind_open.send('已开启提醒')
 
 
 

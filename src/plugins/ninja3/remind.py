@@ -6,16 +6,16 @@ from nonebot.params import RegexGroup, CommandArg
 
 from typing import Tuple
 
-from .utils import load_from_json, save_to_json
-from .utils import DATA_PATH, serch_uid
-REMIND = DATA_PATH / "remind.json"
+from .utils import load_from_json, save_to_json, serch_uid
+from .requires import store
+REMIND_PATH = store.get_plugin_data_file("remind.json")
 
 
 
 boss = on_regex(r"(赤须|虎皮|金面|隼|蚊|青龙|红龙|双龙|蝙蝠|秃|剑|前台|猴|鸟|笔)", block=False, priority=10)
 @boss.handle()
 async def _(event: GroupMessageEvent, match: Tuple = RegexGroup()):
-    data: dict[str, dict[str, list[int]]] = load_from_json(REMIND)
+    data: dict[str, dict[str, list[int]]] = load_from_json(REMIND_PATH)
     group_id = str(event.group_id)
     boss_name = match[0]
 
@@ -51,13 +51,13 @@ async def _(event: GroupMessageEvent, match: Tuple = RegexGroup()):
     else:
         pass
     
-    data: dict[str, dict[str, list[int]]] = load_from_json(REMIND)
+    data: dict[str, dict[str, list[int]]] = load_from_json(REMIND_PATH)
     if group_id not in data[boss_name]:
         data[boss_name][group_id] = [user_id]
     else:
         if user_id not in data[boss_name][group_id]:
             data[boss_name][group_id].append(user_id)
-    save_to_json(REMIND, data)
+    save_to_json(REMIND_PATH, data)
 
     await add_remind.send(f"添加成功，发</取消提醒 {boss_name}>可取消")
 
@@ -75,13 +75,13 @@ async def _(event: GroupMessageEvent, args: Message = CommandArg()):
         boss_name = "剑"
     else:
         pass
-    data: dict[str, dict[str, list[int]]] = load_from_json(REMIND)
+    data: dict[str, dict[str, list[int]]] = load_from_json(REMIND_PATH)
     if boss_name in data:
         group_id = str(event.group_id)
         user_id = event.user_id
         user_list = data[boss_name].get(group_id)
         if user_list and user_id in user_list:
             data[boss_name][group_id].remove(user_id)
-            save_to_json(REMIND, data)
+            save_to_json(REMIND_PATH, data)
             await del_remind.send(f"已删除<{boss_name}>的提醒任务")
     

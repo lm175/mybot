@@ -1,7 +1,7 @@
 from nonebot.adapters.onebot.v11 import Message
 from abc import ABC, abstractmethod
 
-import asyncio, json
+import asyncio, json, copy
 CHATLOCK = asyncio.Lock()
 
 from .config import DATA_PATH
@@ -27,7 +27,7 @@ class UserData:
     def __init__(self, user_id: str) -> None:
         user_data = self.__class__.data.get(user_id)
         if not user_data:
-            user_data = self.default_data
+            user_data = copy.deepcopy(self.default_data)
         current_model = user_data.get("current_model")
         identity = user_data.get(current_model).get("identity")
         records = user_data.get(current_model).get("records")

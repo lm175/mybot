@@ -11,13 +11,8 @@ class ChatBot:
 
     assistant_id = "65940acff94777010aa6b796"
     meta_data = {
-        "mention_conversation_id": "",
-        "is_test": False,
-        "input_question_type": "xxxx",
-        "channel": "",
-        "draft_id": "",
-        "quote_log_id": "",
-        "platform": "pc"
+        "if_plus_model": False,
+        "plus_model_available": False
     }
 
     def __init__(self, Cookie: str) -> None:
@@ -30,7 +25,7 @@ class ChatBot:
                 key = it[:equ_loc]
                 value = it[equ_loc + 1:]
                 cookies[key] = value
-        self.refresh_token = cookies.get('chatglm_refresh_token')
+        self.refresh_token = cookies["chatglm_refresh_token"]
 
         self._access_token = None
         self._token_expiry = 0
@@ -82,10 +77,10 @@ class ChatBot:
             prompt: str,
             conversation_id: str = "",
             timeout: int = 60,
-            images: list[bytes] = None
+            images: list[bytes] = []
     ) -> Generator[ChatResponse, None, None]:
 
-        content = [{"type": "text", "text": prompt}]
+        content: list[dict[str, str | dict]] = [{"type": "text", "text": prompt}]
         if images:
             images_data = []
             for img in images:
@@ -131,11 +126,11 @@ class ChatBot:
             prompt: str,
             conversation_id: str = "",
             timeout: int = 60,
-            images: list[bytes] = None
+            images: list[bytes] = []
     ) -> ChatResponse:
         
         result = None
-        image_url = None
+        image_url = ""
         for resp in self._stream_ask(
                 prompt,
                 conversation_id,
