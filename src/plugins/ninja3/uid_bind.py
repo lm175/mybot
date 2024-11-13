@@ -10,7 +10,7 @@ from .requires import async_scoped_session
 from sqlalchemy import select
 
 import asyncio
-from io import BytesIO
+
 
 uid_add = on_command("忍3绑定uid", aliases={"忍三绑定uid", "忍3绑定UID", "忍三绑定UID"}, priority=10, block=True)
 

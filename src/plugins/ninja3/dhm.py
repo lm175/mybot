@@ -20,6 +20,8 @@ from .requires import async_scoped_session
 
 async def use_driver_to_redeem(bot: Bot, redeem: RedeemCode, users: list[Users], session: async_scoped_session):
     tips: dict[int, str] = {}
+    friends = await bot.get_friend_list()
+    friend_list = [str(f.get('user_id')) for f in friends]
     for usr in users:
         game_ids = await get_current_uids(session, usr.user_id)
         images = []
@@ -28,14 +30,15 @@ async def use_driver_to_redeem(bot: Bot, redeem: RedeemCode, users: list[Users],
             tips[uid] = tip_msg
             images.append(img)
         if usr.need_remind: # 发送提醒消息
-            uid_str = ""
-            for u in game_ids:
-                uid_str += f"\n{u}"
-            message = MessageSegment.text(f"[{redeem.code}]{uid_str}\n已完成兑换\n")
-            for img in images:
-                message += MessageSegment.image(img)
-            message += "发送 /关闭提醒 将不再接收该消息"
-            await bot.send_private_msg(user_id=usr.user_id, message=message)
+            if str(usr.user_id) in friend_list:
+                uid_str = ""
+                for u in game_ids:
+                    uid_str += f"\n{u}"
+                message = MessageSegment.text(f"[{redeem.code}]{uid_str}\n已完成兑换\n")
+                for img in images:
+                    message += MessageSegment.image(img)
+                message += "发送 /关闭提醒 将不再接收该消息"
+                await bot.send_private_msg(user_id=usr.user_id, message=message)
 
     return tips
 
