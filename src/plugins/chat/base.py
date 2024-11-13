@@ -4,11 +4,13 @@ from abc import ABC, abstractmethod
 import asyncio, json, copy
 CHATLOCK = asyncio.Lock()
 
-from .config import DATA_PATH
+from nonebot import require
+require("nonebot_plugin_localstore")
+import nonebot_plugin_localstore as store
 
 
 class UserData:
-    path = DATA_PATH / "records.json"
+    path = store.get_plugin_data_file("records.json")
     data: dict[str, dict] = {}
 
     default_data = {
