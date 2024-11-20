@@ -43,7 +43,9 @@ async def _(event: Event, user_id: UserId, msg: Message = CommandArg()):
         if isinstance(help_msg, str):
             await help.finish(help_msg)
         else:
-            await UniMessage.image(raw=help_msg).text("发送</help 插件名>查看详情").send()
+            await UniMessage.image(raw=help_msg).send()
+            if not keyword:
+                await help.send("可以发送</help 插件名>查看插件详情哦")
 
 
 async def get_help_msg(user_id: str, keyword: str = "") -> Optional[Union[str, bytes]]:
