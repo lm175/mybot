@@ -64,7 +64,7 @@ async def _(event: MessageEvent, state: T_State, session: async_scoped_session):
         uid_str = ""
         for u in uids:
             uid_str += f"\n{u}"
-        await uid_add.send(f"添加成功，当前已绑定uid:{uid_str}\n正在检查当前可用的兑换码··")
+        await uid_add.send(f"添加成功，当前已绑定uid:{uid_str}\n正在检查可用的兑换码··")
 
         if res := await session.scalars(select(GiftCodes.code).where(GiftCodes.available == True)):
             codes = res.all()
@@ -72,8 +72,8 @@ async def _(event: MessageEvent, state: T_State, session: async_scoped_session):
             reply_msg = Message()
             for c in codes:
                 redeem.code = c
-                tip_msg, img = await asyncio.to_thread(redeem.redeem_for_user, str(game_id))
-                reply_msg += MessageSegment.text(tip_msg) + MessageSegment.image(img)
+                _, img = await asyncio.to_thread(redeem.redeem_for_user, str(game_id))
+                reply_msg += MessageSegment.text(c) + MessageSegment.image(img)
             await uid_add.send(reply_msg, at_sender=True)
             
         await session.commit()
