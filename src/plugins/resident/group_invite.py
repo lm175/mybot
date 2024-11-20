@@ -13,8 +13,8 @@ super_user = list(nonebot.get_driver().config.superusers)
 super_user = super_user[0] if super_user else "1756000830"
 
 
-from nonebot import on_command, on_request
-from nonebot.adapters.onebot.v11 import Bot, Message, GroupRequestEvent
+from nonebot import on_command, on_request, on_message
+from nonebot.adapters.onebot.v11 import Bot, Message, GroupRequestEvent, PrivateMessageEvent
 from nonebot.params import CommandArg
 from nonebot.adapters.onebot.v11.helpers import extract_numbers
 from nonebot.permission import SUPERUSER
@@ -50,6 +50,15 @@ async def _(bot: Bot, event: GroupRequestEvent):
             )
             logger.error(f"Failed to auto-approve group invitation: {e}")
 
+
+async def invite_checker(event: PrivateMessageEvent) -> bool:
+    text = str(event.message)
+    if '"app":"com.tencent.qun.invite"' in text:
+        return True
+    return False
+
+# 阻断群邀请卡片，一定程度防止糖人试图让ai自己进群
+blocker = on_message(rule=invite_checker, priority=90, block=True)
 
 
 append_group = on_command("添加群组", permission=SUPERUSER, priority=5, block=True)
