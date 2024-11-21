@@ -28,7 +28,7 @@ class GLM(BaseBot):
     async def ask_directly(self, message: ChatBotMessage) -> Message:
         async with self._chatlock:
             result, conversation_id =  await asyncio.to_thread(self._ask, message)
-            await asyncio.to_thread(self._del_conversation, conversation_id)
+            await asyncio.to_thread(self.chatbot.del_conversation, conversation_id)
             return result
 
 
@@ -37,12 +37,11 @@ class GLM(BaseBot):
         user = UserData(user_id)
         user.change_identity("default")
         records = user.records
-        conversation_id = records.get("conversation_id")
+        conversation_id = records["conversation_id"]
         records["conversation_id"] = ""
         user.update_records(records)
-        if conversation_id:
-            async with self._chatlock:
-                return await asyncio.to_thread(self._del_conversation, conversation_id)
+        async with self._chatlock:
+            return await asyncio.to_thread(self.chatbot.del_conversation, conversation_id)
     
 
     async def changeidentity(self, user_id: str, text: str):
@@ -57,14 +56,12 @@ class GLM(BaseBot):
             conversation_id=conversation_id,
             images=message.images
         )
-        result = Message(response.content)
+        result = Message(response.content.lstrip())
         if response.image_url:
             result += MessageSegment.image(response.image_url)
         return result, response.conversation_id
 
 
-    def _del_conversation(self, conversation_id: str) -> bool:
-        return self.chatbot.del_conversation(conversation_id)
 
 
 
