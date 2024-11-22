@@ -1,7 +1,7 @@
 # 一些常用的智能体，继承自ChatBot类，调用方法相同
 
 from typing import Generator
-from .entity import ChatResponse
+from .data import ChatResponse
 from .glm import ChatBot
 
 
@@ -42,9 +42,9 @@ class ImageBot(ChatBot):
             conversation_id: str = "",
             timeout: int = 60,
             stream: bool = False,
-            images: list[bytes] = None
+            images: list[bytes] = []
     ) -> Generator[ChatResponse, None, None] | ChatResponse:
-        prompt = f"{prompt} style: {self.meta_data.get('cogview').get('style')}"
+        prompt = f"{prompt} style: {self.meta_data['cogview']['style']}"
         return super().ask(prompt, conversation_id, timeout, stream, images)
 
 
@@ -52,3 +52,11 @@ class ImageBot(ChatBot):
 class SearchBot(ChatBot):
     """AI搜索"""
     assistant_id = "659e54b1b8006379b4b2abd6"
+
+
+class ChatPlusBot(ChatBot):
+    """glm4plus"""
+    meta_data = {
+        "if_plus_model": True,
+        "plus_model_available": True
+    }

@@ -1,16 +1,16 @@
 import requests, json, time
-from typing import Union, Generator
+from typing import Union, Generator, Any
 from fake_useragent import UserAgent
 
-from .entity import ChatResponse
+from .data import ChatResponse, Content
 
 class ChatBot:
 
     base_api = "https://chatglm.cn/chatglm"
     refresh_token: str
 
-    assistant_id = "65940acff94777010aa6b796"
-    meta_data = {
+    assistant_id = "65940acff94777010aa6b796" # chatglm assistant
+    meta_data: dict[str, Any] = {
         "if_plus_model": False,
         "plus_model_available": False
     }
@@ -80,7 +80,7 @@ class ChatBot:
             images: list[bytes] = []
     ) -> Generator[ChatResponse, None, None]:
 
-        content: list[dict[str, str | dict]] = [{"type": "text", "text": prompt}]
+        content: list[dict[str, str | list]] = [{"type": "text", "text": prompt}]
         if images:
             images_data = []
             for img in images:
@@ -88,7 +88,7 @@ class ChatBot:
             content.append({"type": "image", "image": images_data})
             
         data = {
-            "assistant_id": self.assistant_id, # chatglm
+            "assistant_id": self.assistant_id,
             "conversation_id": conversation_id,
             "meta_data": self.meta_data,
             "messages": [
@@ -116,7 +116,7 @@ class ChatBot:
                     chunk = chunk[6:]
                     data = json.loads(chunk)
                     
-                    result = ChatResponse(data)
+                    result = ChatResponse(**data)
                     yield result
         else:
             raise Exception(resp.text)
@@ -129,8 +129,8 @@ class ChatBot:
             images: list[bytes] = []
     ) -> ChatResponse:
         
-        result = None
-        image_url = ""
+        result = ChatResponse()
+        image_url = ''
         for resp in self._stream_ask(
                 prompt,
                 conversation_id,
@@ -138,9 +138,8 @@ class ChatBot:
                 images
         ):
             result = resp
-            if result.content_type == "image" :
-                image_url = result._image
-
+            if result.image_url:
+                image_url = result.image_url
         result.image_url = image_url
         return result
 
@@ -151,7 +150,7 @@ class ChatBot:
             conversation_id: str = "",
             timeout: int = 60,
             stream: bool = False,
-            images: list[bytes] = None
+            images: list[bytes] = []
     ) -> Union[Generator[ChatResponse, None, None], ChatResponse]:
         """提问
 
