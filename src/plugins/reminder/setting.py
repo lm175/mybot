@@ -145,7 +145,7 @@ async def reschedule_tasks(bot: Bot):
             task_id = task_info["task_id"]
             run_date_str = task_info["run_date"]
             
-            run_date = datetime.fromisoformat(run_date_str)
+            run_date = datetime.strptime(run_date_str, "%Y-%m-%dT%H:%M:%S")
             current_time = datetime.now()
             
             if run_date > current_time:
