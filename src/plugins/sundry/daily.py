@@ -19,11 +19,16 @@ Sendlike = on_fullmatch(('赞我', '点赞'), priority=5, block=True)
 async def handle_send_likes(bot: Bot, event: MessageEvent):
     user_id = event.user_id
 
-    if await check_and_mark_command(user_id):
-        await bot.send_like(user_id=user_id, times=10)
-        await Sendlike.finish('给你点了10个赞，记得先加好友哦', at_sender=True)
+    # if await check_and_mark_command(user_id):
+    #     await bot.send_like(user_id=user_id, times=10)
+    #     await Sendlike.finish('给你点了10个赞，记得先加好友哦', at_sender=True)
 
-    await Sendlike.finish('今天已经点过赞了哦，请明天再来吧', at_sender=True)
+    # await Sendlike.finish('今天已经点过赞了哦，请明天再来吧', at_sender=True)
+    try:
+        await bot.send_like(user_id=user_id, times=10)
+        await Sendlike.finish('给你点了10个赞，加好友后会自动点赞哦', at_sender=True)
+    except:
+        await Sendlike.finish('今天已经点过赞了哦，请明天再来吧', at_sender=True)
 
 
 
