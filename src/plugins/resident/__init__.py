@@ -42,14 +42,14 @@ async def _():
         users.extend(friend_ids)
     except Exception as e:
         logger.error(e)
-    try:    # 获取点赞列表
-        profile_like = await bot.call_api("get_profile_like")
-        user_infos: List[Dict[str, Any]] = profile_like["userInfos"]
-        for user in user_infos:
-            if user["uin"] not in users:
-                users.append(user["uin"])
-    except Exception as e:
-        logger.error(e)
+ #   try:    # 获取点赞列表
+ #       profile_like = await bot.call_api("get_profile_like")
+ #       user_infos: List[Dict[str, Any]] = profile_like["userInfos"]
+ #       for user in user_infos:
+ #           if user["uin"] not in users:
+ #               users.append(user["uin"])
+ #   except Exception as e:
+ #       logger.error(e)
     
     for u in users: # 点赞
         try:

@@ -26,9 +26,9 @@ async def handle_send_likes(bot: Bot, event: MessageEvent):
     # await Sendlike.finish('今天已经点过赞了哦，请明天再来吧', at_sender=True)
     try:
         await bot.send_like(user_id=user_id, times=10)
-        await Sendlike.finish('给你点了10个赞，加好友后会自动点赞哦', at_sender=True)
+        await Sendlike.send('给你点了10个赞，加好友后会自动点赞哦', at_sender=True)
     except:
-        await Sendlike.finish('今天已经点过赞了哦，请明天再来吧', at_sender=True)
+        await Sendlike.send('今天已经点过赞了哦，请明天再来吧', at_sender=True)
 
 
 
