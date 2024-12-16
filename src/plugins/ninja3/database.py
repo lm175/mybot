@@ -31,7 +31,7 @@ class AsyncDatabase:
     async def get_available_codes(self) -> list[str]:
         """获取可用兑换码列表"""
         result = await (await self.execute(
-            """SELECT code FROM giftcodes WHERE available=1"""
+            "SELECT code FROM giftcodes WHERE available=1"
         )).fetchall()
         return [r[0] for r in result]
 
@@ -113,8 +113,8 @@ class AsyncDatabase:
     async def user_remind(self, user_id: int, need_remind: bool) -> None:
         """更改提醒状态"""
         await self.execute(
-            "UPDATE users SET need_remind=?",
-            (need_remind,)
+            "UPDATE users SET need_remind=? WHERE user_id=?",
+            (need_remind, user_id)
         )
         await self.commit()
 
