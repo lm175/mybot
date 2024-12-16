@@ -1,4 +1,4 @@
-from nonebot import on_command, on_regex
+from nonebot import on_command, on_regex, on_fullmatch
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
 from nonebot.params import CommandArg
 from nonebot.typing import T_State
@@ -18,6 +18,17 @@ zyroad_regex = on_regex(
 @zyroad_regex.handle()
 async def _():
     await zyroad_regex.send(MessageSegment.image(ZY_PATH))
+
+
+zyroad_fullmatch = on_fullmatch(
+    ("四象路线", "终焉路线", "四象顺序", "终焉顺序"),
+    priority=11,
+    block=True
+)
+
+@zyroad_fullmatch.handle()
+async def _():
+    await zyroad_fullmatch.send(MessageSegment.image(ZY_PATH))
 
 
 

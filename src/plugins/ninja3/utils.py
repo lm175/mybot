@@ -6,36 +6,24 @@ from ddddocr import DdddOcr
 from nonebot.log import logger
 
 from io import BytesIO
+from collections.abc import Iterable
 import time, base64, json, datetime
+
 from PIL import Image
 from httpx import AsyncClient
-from collections.abc import Sequence
+from aiosqlite import Row
 import requests
 
-from .database import GameIDs, Users, GiftCodes
-from .requires import async_scoped_session
-from sqlalchemy import select
 
 
-
-
-async def get_current_uids(session: async_scoped_session, user_id: int) -> list[int]:
-    result = await session.execute(
-        select(GameIDs).where(GameIDs.user_id == user_id)
-    )
-    current_uids = result.scalars().all()
-    return [u.game_id for u in current_uids]
-
-
-
-def split_list(users: Sequence[Users]) -> tuple[list[Users], list[Users]]:
+def split_list(users: Iterable[Row]) -> tuple[list[Row], list[Row]]:
     # 贪心算法，将users列表分成两半
-    list1: list[Users] = []
-    list2: list[Users] = []
+    list1: list[Row] = []
+    list2: list[Row] = []
 
     for usr in users:
-        sum1 = sum(u.uid_nums for u in list1)
-        sum2 = sum(u.uid_nums for u in list2)
+        sum1 = sum(u[1] for u in list1)
+        sum2 = sum(u[1] for u in list2)
         if sum1 <= sum2:
             list1.append(usr)
         else:
@@ -50,15 +38,6 @@ def is_this_week(date: datetime.date) -> bool:
     end_of_week = start_of_week + datetime.timedelta(days=6)
 
     return start_of_week <= date <= end_of_week
-
-
-async def update_codes(session: async_scoped_session) -> None:
-    res = await session.scalars(select(GiftCodes).where(GiftCodes.available == True))
-    codes = res.all()
-    for c in codes:
-        if c.available and not is_this_week(c.time):
-            c.available = False
-
 
 
 
@@ -158,7 +137,6 @@ class RedeemCode():
             logger.error(e)
             return
 
-
 async def serch_uid(uid: int) -> str:
     async with AsyncClient() as client:
         res = await client.get(f"https://statistics.pandadastudio.com/player/simpleInfo?uid={uid}")
@@ -169,9 +147,6 @@ async def serch_uid(uid: int) -> str:
     if not data["title"]:
         data["title"] = "禁忍"
     return f"uid: {data['uid']}\n{data['name']} - {int(data['serverId']) + 1}服 - {data['title']}"
-
-
-
 
 def load_from_json(path):
     with open(path, 'r', encoding='utf-8') as f:
