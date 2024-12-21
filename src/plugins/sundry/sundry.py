@@ -95,6 +95,7 @@ async def handle_kfc_text():
 fabing = on_command("发病", priority=10, block=True)
 @fabing.handle()
 async def handle_ill(bot: Bot, event: MessageEvent, arg: Message=CommandArg()):
+    target_id = 0
     for seg in event.get_message():
         if seg.type == "at":
             target_id = seg.data["qq"]
