@@ -67,8 +67,8 @@ tools = [
                         "description": "目标时间到达时要对用户说的话",
                         "type": "string"
                     },
+                },
                 "required": [ "target_time", "remind_words" ]
-                }
             }
         }
     },

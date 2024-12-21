@@ -9,8 +9,8 @@ white_list: list[int] = []
 import nonebot
 self_name = list(nonebot.get_driver().config.nickname)
 self_name = self_name[0] if self_name else "桃子"
-super_user = list(nonebot.get_driver().config.superusers)
-super_user = super_user[0] if super_user else "1756000830"
+superusers = list(nonebot.get_driver().config.superusers)
+super_user = superusers[0] if superusers else ""
 
 
 from nonebot import on_command, on_request, on_message
@@ -58,7 +58,10 @@ async def invite_checker(event: PrivateMessageEvent) -> bool:
     return False
 
 # 阻断群邀请卡片，一定程度防止糖人试图让ai自己进群
-blocker = on_message(rule=invite_checker, priority=90, block=True)
+blocker = on_message(rule=invite_checker, priority=5, block=True)
+@blocker.handle()
+async def _():
+    await blocker.send(f"邀请加群请联系管理员：{super_user}")
 
 
 append_group = on_command("添加群组", permission=SUPERUSER, priority=5, block=True)
