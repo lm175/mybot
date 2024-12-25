@@ -42,12 +42,10 @@ nonebot-plugin-orm = {version = "^0.7.6", extras = ["default"]}
 nonebot-plugin-picstatus = "^2.0.0"
 nonebot-plugin-send-anything-anywhere = "^0.7.0"
 nonebot-plugin-userinfo = "^0.2.0"
-nonebot-plugin-fakepic = "^0.2.0"
 nonebot-plugin-gscode = "^0.2.2"
 nonebot-plugin-gspanel = "^0.2.25"
 nonebot-plugin-setu4 = "^0.15.114514.2"
 nonebot-plugin-miragetank = "^0.2.1"
-nonebot-plugin-fakemsg = "^0.1.7"
 nonebot-plugin-makemidi = "0.3.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -65,12 +63,10 @@ plugins = [
     "nonebot_plugin_multincm",
     "nonebot_plugin_picstatus",
     "nonebot_plugin_saa",
-    "nonebot_plugin_fakepic",
     "nonebot_plugin_gscode",
     "nonebot_plugin_gspanel",
     "nonebot_plugin_setu4",
     "nonebot_plugin_miragetank",
-    "nonebot_plugin_fakemsg",
     "nonebot_plugin_makemidi",
 ]
 plugin_dirs = ["src/plugins"]

@@ -31,7 +31,7 @@ async def _(bot: Bot, event: GroupRequestEvent):
     if group_id not in white_list:
         await bot.send_private_msg(
             user_id=user_id,
-            message=f'是个陌生群聊呢，还是先跟{super_user}说一下再邀请我吧(｡･ω･｡)'
+            message=f'是个陌生群聊呢，还是先跟管理员{super_user}说一下再邀请我吧(｡･ω･｡)'
         )
     else:
         try:
@@ -61,7 +61,8 @@ async def invite_checker(event: PrivateMessageEvent) -> bool:
 blocker = on_message(rule=invite_checker, priority=5, block=True)
 @blocker.handle()
 async def _():
-    await blocker.send(f"邀请加群请联系管理员：{super_user}")
+    # await blocker.send(f"邀请加群请联系管理员：{super_user}")
+    pass
 
 
 append_group = on_command("添加群组", permission=SUPERUSER, priority=5, block=True)
