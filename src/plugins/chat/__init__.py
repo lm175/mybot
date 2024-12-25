@@ -1,12 +1,12 @@
 from nonebot.plugin import on_message, on_command
 from nonebot.rule import to_me
-from nonebot.adapters.onebot.v11 import MessageEvent, Message
+from nonebot.adapters.onebot.v11 import MessageEvent, Message, MessageSegment
 from nonebot.params import CommandArg
 from nonebot.typing import T_State
 
-from .utils import handle_message, get_chat_bot
-from .base import UserData
-
+from .utils import handle_message, get_chat_bot, get_random_picture
+from .base import UserData, store
+data_dir = store.get_plugin_data_dir()
 
 from nonebot.plugin import PluginMetadata
 
@@ -18,17 +18,22 @@ __plugin_meta__ = PluginMetadata(
         "   介绍：触发AI对话\n"
         "   示例：@桃子 早上好\n"
         " \n"
-        "切换设定\n"
+        "/切换设定\n"
         "   介绍：可自己设置它的人设\n"
-        "   示例：切换设定 你是一只小猫\n"
+        "   示例：/切换设定 你是一只小猫\n"
         " \n"
-        "clear\n"
+        "/clear\n"
         "   介绍：清除对话记忆和人设"
     ),
     extra={
         "notice": "每位用户的对话记录和人设不互通",
     },
 )
+
+
+morning = ["早上好", "早安"]
+night = ["晚安"]
+
 
 ai_matcher = on_message(rule=to_me(), priority=99)
 
@@ -38,6 +43,17 @@ async def _(event: MessageEvent):
     chatbot = get_chat_bot(event.get_user_id())
     reply = await chatbot.ask(message)
     await ai_matcher.send(reply)
+    
+    msgstr = event.message.extract_plain_text()
+    if msgstr in morning:
+        pictures = data_dir / "morning"
+    elif msgstr in night:
+        pictures = data_dir / "night"
+    else:
+        await ai_matcher.finish()
+    pic = await get_random_picture(data_dir / pictures)
+    if pic:
+        await ai_matcher.send(MessageSegment.image(pic))
 
 
 

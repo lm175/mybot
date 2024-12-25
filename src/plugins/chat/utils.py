@@ -2,6 +2,8 @@ from nonebot.adapters.onebot.v11 import MessageEvent, Message
 from httpx import AsyncClient
 
 from datetime import datetime
+from pathlib import Path
+import random
 
 from .base import ChatBotMessage, UserData, BaseBot
 from .model import glmbot, qwenbot
@@ -21,7 +23,7 @@ async def seprate_message(message: Message) -> tuple[str, list[bytes]]:
         if msgtype == "image":
             text += str(seg)
             async with AsyncClient() as cli:
-                res = await cli.get(seg.data.get("url"))
+                res = await cli.get(seg.data["url"])
                 images.append(res.content)
         else:
             text += str(seg)
@@ -71,3 +73,14 @@ def get_chat_bot(user_id: str) -> BaseBot:
     elif current_model == "通义千问":
         chatbot = qwenbot
     return chatbot
+
+
+
+async def get_random_picture(path: Path) -> Path | None:
+    if not path.is_dir():
+        raise NotADirectoryError(f"{path} is not a valid directory.")
+
+    files = [file for file in path.iterdir() if file.is_file()]
+    if not files:
+        return None
+    return random.choice(files)

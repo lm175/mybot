@@ -22,7 +22,7 @@ __plugin_meta__ = PluginMetadata(
     usage="启用插件/禁用插件 插件名",
     extra={
         "example": "禁用插件 setu",
-        "notice": "仅管理员或超级用户可用",
+        "notice": "仅群管理员或超级用户可用",
     },
 )
 
