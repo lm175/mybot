@@ -1,4 +1,4 @@
-from nonebot import on_command
+from nonebot import on_command, get_driver
 from nonebot.adapters.onebot.v11 import (
     Bot,
     Message,
@@ -6,6 +6,7 @@ from nonebot.adapters.onebot.v11 import (
 )
 from nonebot.matcher import Matcher
 from nonebot.params import CommandArg, ArgPlainText
+from nonebot.log import logger
 
 import asyncio
 from datetime import date
@@ -45,10 +46,13 @@ async def use_driver_to_redeem(
                 for img in images:
                     message += MessageSegment.image(img)
                 message += "发送 /关闭提醒 将不再接收该消息"
-                await bot.send_private_msg(
-                    user_id=usr[0], 
-                    message=message
-                )
+                try:
+                    await bot.send_private_msg(
+                        user_id=usr[0], 
+                        message=message
+                    )
+                except Exception as e:
+                    logger.error(f"用户{usr[0]}发送提醒消息异常：{e}")
 
     return tips
 
@@ -95,6 +99,11 @@ async def _(bot: Bot, code: str = ArgPlainText('code')):
         creat_new_driver_to_redeem(bot, code,  users[1])
     )
 
+    superusers = list(get_driver().config.superusers)
+    superuser = superusers[0] if superusers else ""
+    selfnames = list(get_driver().config.nickname)
+    selfname = selfnames[0] if selfnames else "桃子"
+
     msg = Message()
     for i in range(len(results)):
         text = f"[task_{i}]"
@@ -102,8 +111,16 @@ async def _(bot: Bot, code: str = ArgPlainText('code')):
             text += f"\n{k}: {v}"
         msg += MessageSegment.node_custom(
             user_id=int(bot.self_id),
-            nickname="桃子",
+            nickname=selfname,
             content=text
         )
     await db.commit()
-    await dhm_update.finish(msg)
+    await dhm_update.send(msg)
+
+    try:
+        await bot.send_private_msg(
+            user_id=int(superuser),
+            message=msg
+        )
+    except Exception as e:
+        logger.error(e)
