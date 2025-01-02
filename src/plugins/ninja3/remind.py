@@ -12,7 +12,7 @@ REMIND_PATH = store.get_plugin_data_file("remind.json")
 
 
 
-boss = on_regex(r"(赤须|虎皮|金面|隼|蚊|青龙|红龙|双龙|蝙蝠|秃|剑|前台|猴|鸟|笔)", block=False, priority=10)
+boss = on_regex(r"(赤须|虎皮|金面|隼|蚊|青龙|红龙|双龙|蝙蝠|秃|剑|前台|猴|鸟|笔)", block=False, priority=8)
 @boss.handle()
 async def _(event: GroupMessageEvent, match: Tuple = RegexGroup()):
     data: dict[str, dict[str, list[int]]] = load_from_json(REMIND_PATH)
@@ -34,7 +34,7 @@ async def _(event: GroupMessageEvent, match: Tuple = RegexGroup()):
 
 
 
-add_remind = on_regex(r"有(赤须|虎皮|金面|隼白|蚊子|青龙|红龙|双龙|蝙蝠|秃子|秃头|王剑|前台|猴子|鸟|毛笔)(喊|提醒|叫)我", rule=to_me(), priority=10)
+add_remind = on_regex(r"有(赤须|虎皮|金面|隼白|蚊子|青龙|红龙|双龙|蝙蝠|秃子|秃头|王剑|前台|猴子|鸟|毛笔)(喊|提醒|叫)我", rule=to_me(), priority=8)
 @add_remind.handle()
 async def _(event: GroupMessageEvent, match: Tuple = RegexGroup()):
     group_id = str(event.group_id)

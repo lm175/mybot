@@ -10,8 +10,11 @@ class Content:
     image_url: str = ''
     tool_calls: List[Dict] = field(default_factory=lambda: [{}])
     content: str = ''
+    code: str = ''
 
-    def __post_init__(self):
+    def __post_init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         if self.image:
             self.image_url = self.image[0].get('image_url', '')
 
