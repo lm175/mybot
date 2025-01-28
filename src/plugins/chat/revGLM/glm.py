@@ -250,4 +250,3 @@ class ChatBot:
         image_data['image_url'] = image_data.get('file_url')
         return image_data
 
-    
