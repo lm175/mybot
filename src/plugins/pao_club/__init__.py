@@ -17,11 +17,14 @@ from nonebot.adapters.onebot.v11 import MessageEvent
 from nonebot import get_driver
 
 from pathlib import Path
-file_path = Path(__file__).parent
+
+dir_path = Path("data/pao_club/")
+if not dir_path.exists():
+    dir_path.mkdir(parents=True, exist_ok=True)
 
 import sqlite3
 
-conn = sqlite3.connect(file_path / 'club.db')
+conn = sqlite3.connect(dir_path / 'club.db')
 cursor = conn.cursor()
 
 
