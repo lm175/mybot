@@ -45,7 +45,7 @@ async def _(event: Event, user_id: UserId, msg: Message = CommandArg()):
         else:
             await UniMessage.image(raw=help_msg).send()
             if not keyword:
-                await help.send("可以发送</help 插件名>查看插件详情哦")
+                await help.send("可以发送“/help 插件名”查看插件使用方法哦")
 
 
 async def get_help_msg(user_id: str, keyword: str = "") -> Optional[Union[str, bytes]]:
@@ -78,3 +78,5 @@ async def get_help_msg(user_id: str, keyword: str = "") -> Optional[Union[str, b
         ):
             img = await get_plugin_img(info)
             return img if img else "出错了，请稍后再试"
+        elif not plugin_name:
+            return f"未找到插件“{keyword}”"
