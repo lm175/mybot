@@ -14,33 +14,33 @@ __plugin_meta__ = PluginMetadata(
         "   发送“/跑跑题库格式”查看具体文件格式"
     ),
     extra={
-        "notice": "不要上传错误答案\n上传有记录，乱传的会拉黑",
+        "notice": "请不要上传错误答案\n上传有记录，乱传的会拉黑",
     },
 )
 
 
-from nonebot import on_fullmatch, on_command
+from nonebot import on_fullmatch, on_command, get_driver
 from nonebot.adapters.onebot.v11 import (
     Bot,
     MessageEvent,
-    GroupMessageEvent,
-    PrivateMessageEvent,
-    Message,
-    MessageSegment
+    PrivateMessageEvent
 )
-from nonebot import get_driver
 from nonebot.log import logger
 
 from pathlib import Path
 import asyncio, json
 
 from .db import DatabaseManager
-from .utils import get_file_data
+from .utils import get_file_data, get_node_message
 from .errors import *
 
 
+names = list(get_driver().config.nickname)
+nickname = names[0] if names else ''
+
 
 club_questions = on_fullmatch(("跑跑答题", "/跑跑答题"),  priority=10, block=True)
+
 
 @club_questions.handle()
 async def _():
@@ -59,11 +59,6 @@ async def _(event: MessageEvent):
 
 
 
-xlsx_img = Path(__file__).parent / "resources" / "xlsx.png"
-txt_img = Path(__file__).parent / "resources" / "txt.png"
-json_img = Path(__file__).parent / "resources" / "json.png"
-db_img = Path(__file__).parent / "resources" / "db.png"
-
 
 upload = on_command("跑跑上传题库",  priority=10, block=True)
 
@@ -73,30 +68,9 @@ async def _(event: MessageEvent):
     if not isinstance(event, PrivateMessageEvent):
         await upload.finish("暂不支持群聊上传，请发送私聊")
     await upload.send("请发送文件，格式参考如下")
-    await upload.send(MessageSegment.node_custom(
-        user_id=event.self_id,
-        nickname="",
-        content=Message(
-            "xlsx: 需包含“题目”和“答案”列" + MessageSegment.image(xlsx_img)
-        )
-    ) + MessageSegment.node_custom(
-        user_id=event.self_id,
-        nickname="",
-        content=Message(
-            "txt: 每行开始应为“题目 ”或“答案 ”" + MessageSegment.image(txt_img)
-        )
-    ) + MessageSegment.node_custom(
-        user_id=event.self_id,
-        nickname="",
-        content=Message(
-            "json: 题目为键，答案为值" + MessageSegment.image(json_img)
-        )
-    ) + MessageSegment.node_custom(
-        user_id=event.self_id,
-        nickname="",
-        content=Message(
-            "db: 数据库中应包含下表" + MessageSegment.image(db_img)
-        )
+    await upload.send(get_node_message(
+        user_id=event.user_id,
+        nickname=nickname
     ))
 
 @upload.receive()
@@ -143,3 +117,16 @@ async def _(bot: Bot, event: PrivateMessageEvent):
         f"新增 {count} 道题目\n"
         f"当前题库题目总数: {total}"
     )
+
+
+
+
+get_format = on_command("跑跑题库格式", priority=10, block=True)
+
+
+@get_format.handle()
+async def _(event: MessageEvent):
+    await get_format.send(get_node_message(
+        user_id=event.user_id,
+        nickname=nickname
+    ))

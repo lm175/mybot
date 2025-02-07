@@ -1,14 +1,17 @@
-from typing import Dict, List
+from nonebot.adapters.onebot.v11 import (
+    Message,
+    MessageSegment
+)
+from nonebot.log import logger
+import pandas as pd
+
+from typing import Dict
 from pathlib import Path
 import json
 import sqlite3
-import pandas as pd
-import logging
 
 from .errors import *
 
-# 设置日志配置
-logging.basicConfig(level=logging.INFO)
 
 def _get_xlsx_data(file_path: Path) -> Dict[str, str]:
     try:
@@ -28,7 +31,7 @@ def _get_xlsx_data(file_path: Path) -> Dict[str, str]:
         return qa_dict
     
     except Exception as e:
-        logging.error(f"An error occurred while processing {file_path}: {e}")
+        logger.error(f"An error occurred while processing {file_path}: {e}")
         raise
 
 def _get_txt_data(file_path: Path) -> Dict[str, str]:
@@ -63,7 +66,7 @@ def _get_json_data(file_path: Path) -> Dict[str, str]:
         with open(file_path, encoding='utf-8') as f:
             file_data = json.load(f)
     except json.JSONDecodeError as e:
-        logging.error(f"JSON decode error in {file_path}: {e}")
+        logger.error(f"JSON decode error in {file_path}: {e}")
         raise
     
     if not isinstance(file_data, dict):
@@ -114,3 +117,40 @@ def get_file_data(file_path: Path) -> Dict[str, str]:
         return _get_db_data(file_path)
     else:
         raise UnsupportedFileTypeError(f"不支持的文件格式: {suffix}")
+
+
+
+
+xlsx_img = Path(__file__).parent / "resources" / "xlsx.png"
+txt_img = Path(__file__).parent / "resources" / "txt.png"
+json_img = Path(__file__).parent / "resources" / "json.png"
+db_img = Path(__file__).parent / "resources" / "db.png"
+
+
+
+def get_node_message(user_id: int, nickname: str) -> Message:
+    return Message(MessageSegment.node_custom(
+        user_id=user_id,
+        nickname=nickname,
+        content=Message(
+            "xlsx: 需包含“题目”和“答案”列" + MessageSegment.image(xlsx_img)
+        )
+    ) + MessageSegment.node_custom(
+        user_id=user_id,
+        nickname=nickname,
+        content=Message(
+            "txt: 每行开始应为“题目 ”或“答案 ”" + MessageSegment.image(txt_img)
+        )
+    ) + MessageSegment.node_custom(
+        user_id=user_id,
+        nickname=nickname,
+        content=Message(
+            "json: 题目为键，答案为值" + MessageSegment.image(json_img)
+        )
+    ) + MessageSegment.node_custom(
+        user_id=user_id,
+        nickname=nickname,
+        content=Message(
+            "db: 数据库中应包含下表" + MessageSegment.image(db_img)
+        )
+    ))
