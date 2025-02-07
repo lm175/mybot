@@ -5,7 +5,7 @@ __plugin_meta__ = PluginMetadata(
     description="超时空跑跑社团答题助手",
     usage=(
         "/跑跑答题\n"
-        "   介绍: 进入答题模式，答题模式下可发送题目关键词进行搜索\n"
+        "   介绍: 进入答题模式，答题模式下可发送题目关键词进行搜索"
         "   发送“q”退出答题模式\n"
         " \n"
         "/跑跑上传题库\n"
@@ -69,7 +69,7 @@ async def _(event: MessageEvent):
         await upload.finish("暂不支持群聊上传，请发送私聊")
     await upload.send("请发送文件，格式参考如下")
     await upload.send(get_node_message(
-        user_id=event.user_id,
+        user_id=event.self_id,
         nickname=nickname
     ))
 
@@ -127,6 +127,6 @@ get_format = on_command("跑跑题库格式", priority=10, block=True)
 @get_format.handle()
 async def _(event: MessageEvent):
     await get_format.send(get_node_message(
-        user_id=event.user_id,
+        user_id=event.self_id,
         nickname=nickname
     ))
