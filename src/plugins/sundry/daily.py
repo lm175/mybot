@@ -17,9 +17,9 @@ Sendlike = on_fullmatch(('赞我', '点赞'), priority=5, block=True)
 
 @Sendlike.handle()
 async def handle_send_likes(bot: Bot, event: MessageEvent):
-    user_id = event.get_user_id()
+    user_id = event.user_id
 
-    if await check_and_mark_command(user_id):
+    if await check_and_mark_command(str(user_id)):
         await bot.send_like(user_id=user_id, times=10)
         await Sendlike.finish('给你点了10个赞，记得先加好友哦', at_sender=True)
 
@@ -35,7 +35,7 @@ async def check_fortune_records(user_id: str):
     return "https://www.hhlqilongzhu.cn/api/tu_yunshi.php", "url"
 
 
-fortune = on_keyword({"今日运势"}, priority=10)
+fortune = on_fullmatch(("今日运势", "/今日运势"), priority=10)
 
 @fortune.handle()
 async def _(bot: Bot, event: MessageEvent):
