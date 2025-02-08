@@ -61,6 +61,8 @@ class DatabaseManager:
                 old_count = (await cursor.fetchone())[0] # type: ignore
 
             for k, v in data.items():
+                if k is None or v is None:
+                    continue  # 跳过无效条目
                 await db.execute('''
                     INSERT OR IGNORE INTO questions
                         (question, answer, submitter)
