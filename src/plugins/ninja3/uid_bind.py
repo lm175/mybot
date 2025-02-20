@@ -91,7 +91,13 @@ async def _(event: MessageEvent, state: T_State):
             reply_msg = ''
             for c in codes:
                 res = await redeem_code(game_id, c[0])
-                reply_msg += f'{c[0]}: {res.msg}'
+                if res.code == 2151:    # 过期了
+                    await db.execute(
+                        "UPDATE giftcodes SET available = ? WHERE code = ?",
+                        (False, c[0])
+                    )
+                else:
+                    reply_msg += f'\n{c[0]}: {res.msg}'
             await uid_add.send(reply_msg, at_sender=True)
 
     else:
