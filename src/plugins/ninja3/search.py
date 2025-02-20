@@ -5,8 +5,9 @@ from nonebot.typing import T_State
 from nonebot.adapters.onebot.v11.helpers import extract_image_urls
 from httpx import AsyncClient
 
-from .requires import store
-ZY_PATH = store.get_plugin_data_file("zy.jpg")
+
+from .db_manager import dir_path
+ZY_PATH = dir_path / 'zy.jpg'
 
 
 zyroad_regex = on_regex(

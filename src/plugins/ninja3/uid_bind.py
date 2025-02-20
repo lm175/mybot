@@ -1,7 +1,6 @@
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import (
     Message,
-    MessageSegment,
     MessageEvent,
     PrivateMessageEvent
 )
@@ -12,10 +11,9 @@ from nonebot.adapters.onebot.v11.helpers import (
     convert_chinese_to_bool
 )
 
-from .database import db_instance as db
-from .utils import serch_uid, RedeemCode
+from .db_manager import DatabaseManager as db
+from .utils import query_uid, redeem_code
 
-import asyncio
 
 
 uid_add = on_command(
@@ -29,10 +27,9 @@ uid_add = on_command(
 @uid_add.handle()
 async def _(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
     user_id = event.user_id
-    await db.get_user_info(user_id)
-    if user := await db.get_user_info(user_id):
-        if user[1] >= 5:
-            await uid_add.finish("您绑定的uid数量已达上限")
+    user_uids = await db.get_user_uids(user_id)
+    if len(user_uids) >= 5:
+        await uid_add.finish("您绑定的uid数量已达上限")
     
     state['user_id'] = user_id
     if nums := extract_numbers(arg):
@@ -41,16 +38,19 @@ async def _(event: MessageEvent, state: T_State, arg: Message = CommandArg()):
 
 @uid_add.got('game_id', prompt="请发送要绑定的uid")
 async def _(state: T_State, game_id = ArgStr('game_id')):
-
     if len(game_id) != 9 and len(game_id) != 12:
         await uid_add.finish("欸？应该是9或12位才对吧？")
     game_id = int(game_id)
-    uid_info = await serch_uid(game_id)
+    uid_info = await query_uid(game_id)
     if not uid_info:
         await uid_add.finish("这个uid好像不太对哦")
 
-    if gameID := await db.get_gameid_info(game_id):
-        await uid_add.finish(f"{game_id}已经被{gameID[1]}绑定过啦~")
+    game_id_info = await db.query_one(
+        "SELECT game_id, user_id FROM gameids WHERE game_id = ?",
+        (game_id,)
+    )
+    if game_id_info:
+        await uid_add.finish(f"{game_id}已经被{game_id_info[1]}绑定过啦~")
 
     state['game_id'] = game_id
     await uid_add.send("玩家信息:\n" + uid_info + "\n是否确认？")
@@ -63,28 +63,37 @@ async def _(event: MessageEvent, state: T_State):
         user_id: int = state['user_id']
         game_id: int = state['game_id']
 
-        user = await db.get_user_info(user_id)
-        if not user:
-            await db.user_add(user_id, 0, True)
+        user_info = await db.query_one(
+            "SELECT user_id FROM users WHERE user_id = ?",
+            (user_id,)
+        )
+        if not user_info:
+            await db.execute(
+                "INSERT INTO users (user_id, need_remind) VALUES (?, ?)",
+                (user_id, True)
+            )
+        await db.execute(
+            "INSERT INTO gameids (game_id, user_id) VALUES (?, ?)",
+            (game_id, user_id)
+        )
 
-        await db.gameid_add(game_id, user_id)
-
-        uids = await db.get_user_uids(user_id)
+        user_uids = await db.get_user_uids(user_id)
         uid_str = ""
-        for u in uids:
+        for u in user_uids:
             uid_str += f"\n{u}"
         await uid_add.send(f"添加成功，当前已绑定uid:{uid_str}\n正在检查可用的兑换码··")
 
-        if codes := await db.get_available_codes():
-            redeem = await asyncio.to_thread(RedeemCode, codes[0])
-            reply_msg = Message()
+        codes = await db.query_all(
+            "SELECT code FROM giftcodes WHERE available = ?",
+            (True,)
+        )
+        if codes:
+            reply_msg = ''
             for c in codes:
-                redeem.code = c
-                _, img = await asyncio.to_thread(redeem.redeem_for_user, str(game_id))
-                reply_msg += MessageSegment.text(c) + MessageSegment.image(img)
+                res = await redeem_code(game_id, c[0])
+                reply_msg += f'{c[0]}: {res.msg}'
             await uid_add.send(reply_msg, at_sender=True)
-            
-        await db.user_update(user_id)
+
     else:
         await uid_add.send("已取消")
 
@@ -98,8 +107,8 @@ uid_del = on_command("忍3解除绑定", aliases={"忍三解除绑定"}, priorit
 @uid_del.handle()
 async def _(event: MessageEvent, arg: Message = CommandArg()):
     user_id = event.user_id
-    user = await db.get_user_info(user_id)
-    if not user:
+    user_uids = await db.get_user_uids(user_id)
+    if not user_uids:
         await uid_del.finish("你还没有绑定过uid呢")
     
     if nums := extract_numbers(arg):
@@ -107,9 +116,8 @@ async def _(event: MessageEvent, arg: Message = CommandArg()):
             msg = await _handle_del_uid(user_id, int(n))
         await uid_del.finish(msg)
     else:
-        uids = await db.get_user_uids(user_id)
         uid_str = ""
-        for u in uids:
+        for u in user_uids:
             uid_str += f"\n{u}"
         await uid_del.send(f"请发送要删除的uid: {uid_str}")
 
@@ -125,18 +133,18 @@ async def _(event: MessageEvent):
 
 
 async def _handle_del_uid(user_id: int, game_id: int) -> str:
-    user = await db.get_user_info(user_id)
-    gameID = await db.get_gameid_info(game_id)
-    if user and gameID:
-        if gameID[1] == user[0]:
-            await db.gameid_del(game_id)
-            await db.user_update(user_id)
+    user_uids = await db.get_user_uids(user_id)
+    if user_uids and game_id in user_uids:
+        await db.execute(
+            "DELETE FROM gameids WHERE game_id=? AND user_id=?",
+            (game_id, user_id)
+        )
 
-            uids = await db.get_user_uids(user_id)
-            uid_str = ""
-            for u in uids:
-                uid_str += f"\n{u}"
-            return f"删除成功，当前已绑定uid:{uid_str}"
+        uids = await db.get_user_uids(user_id)
+        uid_str = ""
+        for u in uids:
+            uid_str += f"\n{u}"
+        return f"删除成功，当前已绑定uid:{uid_str}"
 
     return "你没有绑定过这个uid哦"
 
@@ -151,14 +159,20 @@ remind_open = on_command('开启提醒', priority=10, block=True)
 # 添加和取消提醒
 @remind_close.handle()
 async def _(event: PrivateMessageEvent):
-    if await db.get_user_info(event.user_id):
-        await db.user_remind(event.user_id, False)
+    if await db.get_user_uids(event.user_id):
+        await db.execute(
+            "UPDATE users SET need_remind=0 WHERE user_id=?",
+            (event.user_id,)
+        )
         await remind_close.send("已关闭提醒\n如需开启请发送 /开启提醒")
 
 @remind_open.handle()
 async def _(event: PrivateMessageEvent):
-    if await db.get_user_info(event.user_id):
-        await db.user_remind(event.user_id, True)
+    if await db.get_user_uids(event.user_id):
+        await db.execute(
+            "UPDATE users SET need_remind=1 WHERE user_id=?",
+            (event.user_id,)
+        )
         await remind_open.send('已开启提醒')
 
 
@@ -172,5 +186,5 @@ async def handle_search_uid(arg: Message = CommandArg()):
     if not nums:
         return
     uid = int(nums[0])
-    user_info = await serch_uid(uid)
+    user_info = await query_uid(uid)
     await uid_search.finish(str(user_info))
