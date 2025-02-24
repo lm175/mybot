@@ -45,28 +45,34 @@ async def _(bot: Bot, code: str = ArgPlainText('code')):
     else:
         await dhm_update.finish('兑换码好像不太对呢，再检查一下吧')
 
-    uids = await db.get_all_uids()
-    result: dict[int, dict[int, str]] = {}
-    for game_id, user_id in uids.items():
-        res = await redeem_code(game_id, code)
-        if user_id not in result:
-            result[user_id] = {}
-        result[user_id][game_id] = res.msg
-    
-    remind_user_rows = await db.query_all(
-        "SELECT user_id FROM users WHERE need_remind = ?",
-        (True,)
+
+    result: dict[int, str] = {}
+    all_users = await db.query_all(
+        "SELECT user_id, need_remind FROM users",
+        ()
     )
-    remind_users: list[int] = [user[0] for user in remind_user_rows]
-    for user_id in remind_users:
-        msg = f"[{code}]"
-        for game_id, tip in result[user_id].items():
-            msg += f"\n{game_id}: {tip}"
-        msg += "发送 /关闭提醒 将不再接收该消息"
-        await bot.send_private_msg(
-            user_id=user_id,
-            message=msg
-        )
+    for user in all_users:
+        user_id = user[0]
+        game_ids = await db.get_user_uids(user_id)
+        print(game_ids)
+        tip_msg = f"[{code}]"
+        for game_id in game_ids:
+            res = await redeem_code(game_id, code)
+            print(f"{game_id}::: {res.msg}")
+            result[game_id] = res.msg
+            tip_msg += f"\n{game_id}: {res.msg}"
+        tip_msg += "\n发送 /关闭提醒 将不再接收该消息"
+        friend_list = await bot.get_friend_list()
+        friend_user_ids = [f['user_id'] for f in friend_list]
+        is_friend = user_id in friend_user_ids
+        if game_ids and is_friend and user[1]:
+            try:
+                await bot.send_private_msg(
+                    user_id=user_id,
+                    message=tip_msg
+                )
+            except Exception as e:
+                logger.warning(e)
 
     superusers = list(get_driver().config.superusers)
     superuser = superusers[0] if superusers else ""
@@ -74,9 +80,8 @@ async def _(bot: Bot, code: str = ArgPlainText('code')):
     selfname = selfnames[0] if selfnames else "桃子"
 
     text = '```'
-    for g in result.values():
-        for game_id, tip in g.items():
-            text += f'\n{game_id}: {tip}'
+    for game_id, tip in result.items():
+        text += f'\n{game_id}: {tip}'
     text += '```'
 
     msg = Message(MessageSegment.node_custom(
