@@ -37,7 +37,6 @@ def upgrade(name: str = "") -> None:
     sa.PrimaryKeyConstraint('record_id', name=op.f('pk_chat_usermessage')),
     info={'bind_key': 'chat'}
     )
-    op.drop_table('deepseekapi_usermessage')
     # ### end Alembic commands ###
 
 
