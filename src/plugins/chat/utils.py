@@ -1,78 +1,108 @@
+from nonebot import get_driver
 from nonebot.adapters.onebot.v11 import MessageEvent, Message
-from httpx import AsyncClient
+from openai import OpenAI
+import httpx
 
-from datetime import datetime
 from pathlib import Path
-import random
+from typing import Union
+import json, random, base64
 
-from .base import ChatBotMessage, UserData, BaseBot
-from .model import glmbot, qwenbot
+
 from .config import config
 
-default_identity = config.chat_default_identity
+API_URL = config.deepseekapi_api_url
+API_KEY = config.deepseekapi_api_key
+
+VLM = config.deepseekapi_vlm
+
+client = OpenAI(api_key=API_KEY, base_url=API_URL)
 
 
-async def seprate_message(message: Message) -> tuple[str, list[bytes]]:
-    """
-    提取Message中的文本和图片
-    """
-    images: list[bytes] = []
-    text: str = ""
-    for seg in message:
-        msgtype = seg.type
-        if msgtype == "image":
-            text += str(seg)
-            async with AsyncClient() as cli:
-                res = await cli.get(seg.data["url"])
-                images.append(res.content)
+bot_names = list(get_driver().config.nickname)
+self_name = bot_names[0] if bot_names else 'bot'
+with open(Path(__file__).parent / 'resource' / 'face_id.json', encoding='utf-8') as f:
+    faces: dict[str, str] = json.load(f)
+
+
+
+async def describe_image(img_url: str) -> str:
+    print(img_url)
+    async with httpx.AsyncClient() as cli:
+        response = await cli.get(img_url)
+        if response.status_code == 200:
+            # 将图片内容转换为Base64编码
+            base64_str = base64.b64encode(response.content).decode('utf-8')
         else:
-            text += str(seg)
-    return text, images
+            raise Exception(f"Failed to fetch image: HTTP {response.status_code}")
+
+    res = client.chat.completions.create(
+        model=VLM,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "描述图片中的内容"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_str}"
+                    }
+                }
+            ]
+        }],
+        stream=False,
+    )
+    return str(res.choices[0].message.content)
 
 
-async def handle_message(event: MessageEvent) -> ChatBotMessage:
-    """
-    将Event转化为ChatBotMessage类，可直接调用BaseBot类的方法
-    """
-    message = event.get_message()
-    user_id = event.get_user_id()
-    text, images = await seprate_message(message)
 
-    if event.reply: # 引用消息处理
-        replytext, replyimages = await seprate_message(event.reply.message)
-        text = replytext + text
-        for img in replyimages:
-            images.append(img)
+async def get_str_message(obj: Union[MessageEvent, Message], desc_image: bool = False) -> str:
+    message_str = ''
 
-    try:    # 获取用户昵称
-        user_nickname = event.sender.nickname
-        text = f'用户“{user_nickname}”对你说：' + text
-    except:
-        pass
+    if isinstance(obj, MessageEvent):
+        message = obj.message
+    elif isinstance(obj, Message):
+        message = obj
+    else:
+        raise TypeError('The argument must be an instance of either MessageEvent or Message.')
+    
+    for seg in message:
+        msg_type = seg.type
+        if msg_type == 'text':
+            message_str += seg.data['text']
+        elif msg_type == 'face':
+            face_id = str(seg.data['id'])
+            if desc := faces.get(face_id, ''):
+                message_str += f'[/{desc}]'
+        elif msg_type == 'image':
+            if desc_image:
+                desc = await describe_image(seg.data['url'])
+                if summary := seg.data['summary']:
+                    message_str += f'[动画表情, details: {desc}]'
+                else:
+                    message_str += f'[图片, details: {desc}]'
+            else:
+                if summary := seg.data['summary']:
+                    message_str += summary
+                else:
+                    message_str += f'[图片]'
+        elif msg_type == 'at':
+            message_str += f"@{seg.data['qq']}"
+        else:
+            message_str += str(seg)
 
-    formatted_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    text = f'[现在时间 {formatted_now}]\n' + text
+    if isinstance(obj, MessageEvent):
+        if obj.is_tome():
+            message_str = f'@{self_name} {message_str}'
+        if obj.reply:
+            reply_content = obj.reply.message.extract_plain_text()
+            if not reply_content:
+                reply_content = ['图片']
+            message_str = f'(回复{obj.reply.sender.user_id}“{reply_content}”)' + message_str
 
-    user = UserData(user_id)
-    identity = user.identity
-    if identity == "default":
-        identity = default_identity
-    chatmsg = ChatBotMessage(identity + text, images, user)
-
-    return chatmsg
-
-
-def get_chat_bot(user_id: str) -> BaseBot:
-    """
-    根据用户当前的模型返回BaseBot对象
-    """
-    user = UserData(user_id)
-    current_model = user.current_model
-    if current_model == "chatglm":
-        chatbot = glmbot
-    elif current_model == "通义千问":
-        chatbot = qwenbot
-    return chatbot
+    return message_str
 
 
 

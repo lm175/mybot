@@ -51,7 +51,7 @@ async def handle_wife(event: MessageEvent):
         await wife.finish("欸？(,,Ծ‸Ծ,, )你才刚刚结婚不久吧？")
     cd_list.append(user_id)
     asyncio.create_task(remove_id(user_id))
-    url = "https://www.hhlqilongzhu.cn/api/tu_yitu.php"
+    url = "https://api.cenguigui.cn/api/pic/?type=iphone"
     reply = "你今天的老婆是她哦" + MessageSegment.image(url)
     await wife.finish(reply, at_sender=True)
 
