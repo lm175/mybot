@@ -130,6 +130,7 @@ async def _(session: async_scoped_session, event: MessageEvent):
             return
 
         # 发送api请求并回复
+        print(messages)
         res = await asyncio.to_thread(send_request, LLM, messages)
         result = res.choices[0].message.content
         if result:
@@ -142,12 +143,12 @@ async def _(session: async_scoped_session, event: MessageEvent):
         # 简单配图
         msgstr = event.message.extract_plain_text()
         if '早上好' in msgstr or '早安' in msgstr or msgstr == '早':
-            pictures = dir_path / "morning"
+            pictures = morning_path
         elif '晚安' in msgstr:
-            pictures = dir_path / "night"
+            pictures = night_path
         else:
             await chat.finish()
-        pic = await get_random_picture(dir_path / pictures)
+        pic = await get_random_picture(pictures)
         if pic:
             await chat.send(MessageSegment.image(pic))
 

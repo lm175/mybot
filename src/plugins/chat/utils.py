@@ -79,12 +79,12 @@ async def get_str_message(obj: Union[MessageEvent, Message], desc_image: bool = 
         elif msg_type == 'image':
             if desc_image:
                 desc = await describe_image(seg.data['url'])
-                if summary := seg.data['summary']:
+                if summary := seg.data.get('summary'):
                     message_str += f'[动画表情, details: {desc}]'
                 else:
                     message_str += f'[图片, details: {desc}]'
             else:
-                if summary := seg.data['summary']:
+                if summary := seg.data.get('summary'):
                     message_str += summary
                 else:
                     message_str += f'[图片]'
@@ -95,7 +95,7 @@ async def get_str_message(obj: Union[MessageEvent, Message], desc_image: bool = 
 
     if isinstance(obj, MessageEvent):
         if obj.is_tome():
-            message_str = f'@{self_name} {message_str}'
+            message_str = f'{self_name}{message_str}'
         if obj.reply:
             reply_content = obj.reply.message.extract_plain_text()
             if not reply_content:
