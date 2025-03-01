@@ -180,12 +180,12 @@ async def _(session: async_scoped_session):
 
 @event_preprocessor
 async def _(bot: obv11Bot, event: PokeNotifyEvent, session: async_scoped_session):
-    sender_name = (await bot.get_stranger_info(user_id=event.sender_id))['nickname'] # type: ignore
+    sender_name = (await bot.get_stranger_info(user_id=event.user_id))['nickname']
     target_user_name = (await bot.get_stranger_info(user_id=event.target_id))['nickname']
     group_id = event.group_id if event.group_id else 0
     content = f'[{sender_name}戳了戳{target_user_name}]'
     msg = UserMessage(
-        user_id=event.sender_id, # type: ignore
+        user_id=event.user_id,
         nickname=sender_name,
         group_id=group_id,
         content=content
