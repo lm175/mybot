@@ -30,15 +30,15 @@ async def _():
 
 
 
-async def at_with_no_message(event: GroupMessageEvent) -> bool:
-    message = str(event.get_message())
-    return not message
+# async def at_with_no_message(event: GroupMessageEvent) -> bool:
+#     message = str(event.get_message())
+#     return not message
 
-only_at_bot = on_message(rule=to_me()&at_with_no_message, priority=10)
+# only_at_bot = on_message(rule=to_me()&at_with_no_message, priority=10)
 
-@only_at_bot.handle()
-async def _():
-    await only_at_bot.send('你干嘛', at_sender=True)
+# @only_at_bot.handle()
+# async def _():
+#     await only_at_bot.send('你干嘛', at_sender=True)
 
 
 

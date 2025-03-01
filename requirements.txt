@@ -172,7 +172,6 @@ requests==2.32.3
 requests-toolbelt==1.0.0
 revDeepSeek==0.0.1
 rich==13.9.4
-selenium==4.26.1
 setuptools==75.6.0
 shellingham==1.5.4
 silk-python==0.2.6
