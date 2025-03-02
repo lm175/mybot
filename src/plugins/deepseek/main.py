@@ -85,9 +85,11 @@ async def _(bot: Bot, event: PrivateMessageEvent, session: async_scoped_session)
     if text:
         parts = clean_format(text)
         result = '' # 存入数据库的content
+        reply_message_id = 0
         for p in parts:
             result += f'{p}\n'
             res = await chat.send(p)
+            reply_message_id = res['message_id']
 
         # 简单配图
         msgstr = event.message.extract_plain_text()
@@ -103,7 +105,7 @@ async def _(bot: Bot, event: PrivateMessageEvent, session: async_scoped_session)
 
         # 保存bot回复的内容
         session.add(PrivateMessage(
-            message_id=res['message_id'],
+            message_id=reply_message_id,
             user_id=event.user_id,
             nickname=self_name,
             is_bot_msg=True,
@@ -182,9 +184,11 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
     if text:
         parts = clean_format(text)
         result = '' # 存入数据库的content
+        reply_message_id = 0
         for p in parts:
             result += f'{p}\n'
             res = await chat.send(p)
+            reply_message_id = res['message_id']
 
         # 简单配图
         msgstr = event.message.extract_plain_text()
@@ -200,7 +204,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
 
         # 保存bot回复的内容
         session.add(GroupMessage(
-            message_id=res['message_id'],
+            message_id=reply_message_id,
             user_id=event.user_id,
             group_id=event.group_id,
             nickname=self_name,
