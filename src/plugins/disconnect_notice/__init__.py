@@ -14,7 +14,7 @@ mail_user = config.notice_mail_user  # QQ邮箱地址
 mail_pass = config.notice_mail_pass  # QQ邮箱授权码
 
 
-import smtplib
+import smtplib, os
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
@@ -27,7 +27,7 @@ async def send_mail(
         sender_name: str = "",
         receiver_name: str = "",
         content: str = "",
-        subject: str = "Bot掉线通知"
+        subject: str = ""
 ) -> None:
     try:
         # 邮件内容
@@ -46,12 +46,26 @@ async def send_mail(
         smtpObj.quit()
 
 
+
 driver = get_driver()
+
 
 @driver.on_bot_disconnect
 async def _(bot: Bot):
     print("bot断开连接，尝试发送邮件通知")
-    await send_mail(content=f"Bot: {bot.self_id}断开连接")
+    await send_mail(
+        content=f"Bot: {bot.self_id}断开连接",
+        subject="Bot掉线通知"
+    )
+    os.system(f"napcat start {bot.self_id}")
+
+@driver.on_bot_connect
+async def _(bot: Bot):
+    print("bot已连接，尝试发送邮件通知")
+    await send_mail(
+        content=f"Bot: {bot.self_id}已连接",
+        subject="Bot上线通知"
+    )
 
 
 
@@ -60,6 +74,6 @@ disconnect_test = on_command("掉线测试", block=True)
 @disconnect_test.handle()
 async def _():
     await send_mail(
-        content="这是一条测试信息",
+        content="这是一条测试信息，你的bot没有真正掉线",
         subject="nonebot掉线通知测试"
     )
