@@ -14,7 +14,7 @@ from nonebot_plugin_session import SessionId, SessionIdType
 
 from src.utils.plugin_manager import plugin_manager
 
-from .data_source import get_help_img, get_plugin_img, get_plugin_info
+from .data_source import get_help_img, get_plugin_img, get_plugin_info, plugin_alias
 
 __plugin_meta__ = PluginMetadata(
     name="帮助",
@@ -70,6 +70,8 @@ async def get_help_msg(user_id: str, keyword: str = "") -> Optional[Union[str, b
         img = await get_help_img(plugin_infos)
         return img if img else "出错了，请稍后再试"
     else:
+        if keyword in plugin_alias:
+            keyword = plugin_alias[keyword]
         plugin_name = plugin_manager.find(keyword)
         if (
             plugin_name

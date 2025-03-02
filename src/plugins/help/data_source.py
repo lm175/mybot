@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
@@ -14,6 +15,8 @@ template_path = dir_path / "template"
 env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(template_path), enable_async=True
 )
+with open(dir_path / "plugin_alias.json", "r", encoding="utf-8") as f:
+    plugin_alias: dict[str, str] = json.load(f)
 
 
 @dataclass
