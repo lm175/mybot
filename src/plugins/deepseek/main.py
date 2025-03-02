@@ -150,7 +150,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         .where(GroupMessage.group_id == event.group_id)
         .order_by(asc(GroupMessage.timestamp))
     )).all()
-    system_prompt = f'{character}\n下面是一段群聊中的消息，格式为[time]nickname: message，请你根据自己的设定和聊天记录进行回复，回复时使用自然语言，不要重复原始消息格式'
+    system_prompt = f'{character}\n下面是一段群聊中的消息，格式为[time]nickname: message，请你以聊天记录作为参考回复最后一位用户的消息。回复时不要重复之前说过的内容，使用自然语言，不要重复原始消息格式'
     messages = [{'role': 'system', 'content': system_prompt}]
     for msg in records[-MAX_LEN:]:
         role = 'assistant' if msg.is_bot_msg else 'user'

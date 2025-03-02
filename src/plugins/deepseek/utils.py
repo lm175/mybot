@@ -31,8 +31,8 @@ async def get_str_message(bot: Bot, message: Message) -> str:
             if desc := faces.get(face_id, ''):
                 message_str += f'[/{desc}]'
         elif msg_type == 'image':
-            if seg.data.get('summary'):
-                message_str += f'[动画表情]'
+            if summary := seg.data.get('summary'):
+                message_str += summary
             else:
                 message_str += f'[图片]'
         elif msg_type == 'at':

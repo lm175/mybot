@@ -7,7 +7,7 @@ class Config(BaseModel):
     deepseek_api_key: str = ''
     deepseek_llm: str = 'deepseek-chat'
     deepseek_vlm: str = 'Qwen/QVQ-72B-Preview'
-    deepseek_max_len: int = 30
+    deepseek_max_len: int = 20
     
 
 config = get_plugin_config(Config)
