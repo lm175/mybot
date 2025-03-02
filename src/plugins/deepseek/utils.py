@@ -36,8 +36,11 @@ async def get_str_message(bot: Bot, message: Message) -> str:
             else:
                 message_str += f'[图片]'
         elif msg_type == 'at':
-            user_info = await bot.get_stranger_info(user_id=seg.data['qq'])
-            message_str += f"@{user_info['nickname']}"
+            try:
+                user_info = await bot.get_stranger_info(user_id=seg.data['qq'])
+                message_str += f"@{user_info['nickname']}"
+            except:
+                message_str += f"@{seg.data['qq']}"
         else:
             message_str += str(seg)
 

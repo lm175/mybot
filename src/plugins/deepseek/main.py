@@ -76,7 +76,7 @@ async def _(bot: Bot, event: PrivateMessageEvent, session: async_scoped_session)
         nickname=str(event.sender.nickname),
         content=current_content
     ))
-    await session.commit()
+    await session.flush()
 
     # 发送api请求并回复
     print(messages)
@@ -125,7 +125,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
             nickname=str(event.sender.nickname),
             content=self_name
         ))
-        await session.commit()
+        await session.flush()
 
         default_reply = random.choice([
             '嗯？在呢~（歪头）',
@@ -141,7 +141,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
             is_bot_msg=True,
             content=default_reply
         ))
-        await session.commit()
+        await session.flush()
         await chat.reject()
 
     # 获取历史记录
@@ -173,7 +173,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         nickname=str(event.sender.nickname),
         content=current_content
     ))
-    await session.commit()
+    await session.flush()
 
     # 发送api请求并回复
     print(messages)
