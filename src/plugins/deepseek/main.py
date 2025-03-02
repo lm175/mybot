@@ -91,6 +91,16 @@ async def _(bot: Bot, event: PrivateMessageEvent, session: async_scoped_session)
             res = await chat.send(p)
             reply_message_id = res['message_id']
 
+        # 保存bot回复的内容
+        session.add(PrivateMessage(
+            message_id=reply_message_id,
+            user_id=event.user_id,
+            nickname=self_name,
+            is_bot_msg=True,
+            content=result
+        ))
+        await session.commit()
+
         # 简单配图
         msgstr = event.message.extract_plain_text()
         if '早上好' in msgstr or '早安' in msgstr or msgstr == '早':
@@ -102,16 +112,6 @@ async def _(bot: Bot, event: PrivateMessageEvent, session: async_scoped_session)
         pic = await get_random_picture(pictures)
         if pic:
             await chat.send(MessageSegment.image(pic))
-
-        # 保存bot回复的内容
-        session.add(PrivateMessage(
-            message_id=reply_message_id,
-            user_id=event.user_id,
-            nickname=self_name,
-            is_bot_msg=True,
-            content=result
-        ))
-        await session.commit()
 
 
 
@@ -130,7 +130,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         await session.flush()
 
         default_reply = random.choice([
-            '嗯？在呢~（歪头）',
+            '嗯？在呢~(๑・ω・๑)',
             f'嗯嗯，{self_name}在这里呢(◍•ᴗ•◍)',
             f'{self_name}在哦'
         ])
@@ -143,7 +143,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
             is_bot_msg=True,
             content=default_reply
         ))
-        await session.flush()
+        await session.commit()
         await chat.reject()
 
     # 获取历史记录
@@ -190,6 +190,18 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
             res = await chat.send(p)
             reply_message_id = res['message_id']
 
+
+        # 保存bot回复的内容
+        session.add(GroupMessage(
+            message_id=reply_message_id,
+            user_id=event.user_id,
+            group_id=event.group_id,
+            nickname=self_name,
+            is_bot_msg=True,
+            content=result
+        ))
+        await session.commit()
+
         # 简单配图
         msgstr = event.message.extract_plain_text()
         if '早上好' in msgstr or '早安' in msgstr or msgstr == '早':
@@ -202,16 +214,6 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         if pic:
             await chat.send(MessageSegment.image(pic))
 
-        # 保存bot回复的内容
-        session.add(GroupMessage(
-            message_id=reply_message_id,
-            user_id=event.user_id,
-            group_id=event.group_id,
-            nickname=self_name,
-            is_bot_msg=True,
-            content=result
-        ))
-        await session.commit()
 
 
 
