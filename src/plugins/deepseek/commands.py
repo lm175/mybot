@@ -61,13 +61,13 @@ summarize = on_fullmatch('总结一下', priority=10, block=True)
 
 @summarize.handle()
 async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
-    await summarize.send(f'{self_name}正在总结，请稍等一下哦~')
+    await summarize.send(f'{self_name}正在总结聊天记录，请稍等一下哦~')
     records = (await session.scalars(
         select(GroupMessage)
         .where(GroupMessage.group_id == event.group_id)
         .order_by(asc(GroupMessage.timestamp))
     )).all()
-    system_prompt = f'下面是一段群聊中的消息，格式为[time]nickname: message，请你详细总结聊天记录的内容，使用自然语言，可以用markdown，不要重复原始消息格式'
+    system_prompt = f'下面是一段群聊中的消息，格式为[time]nickname: message，请你详细总结聊天记录的内容。使用自然语言，回复用中文，可以用markdown，不要重复原始消息格式'
     messages = [{'role': 'system', 'content': system_prompt}]
     for msg in records[-500:]:
         role = 'assistant' if msg.is_bot_msg else 'user'
