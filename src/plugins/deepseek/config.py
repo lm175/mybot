@@ -8,6 +8,9 @@ class Config(BaseModel):
     deepseek_llm: str = 'deepseek-chat'
     deepseek_vlm: str = 'Qwen/QVQ-72B-Preview'
     deepseek_max_len: int = 20
+
+    kimi_access_token: str = ''
+    kimi_refresh_token: str = ''
     
 
 config = get_plugin_config(Config)

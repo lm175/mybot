@@ -1,15 +1,18 @@
 from nonebot import get_driver
 from nonebot.adapters.onebot.v11 import (
     Bot,
-    Message,
     MessageEvent
 )
+from nonebot import require
+require("nonebot_plugin_orm")
+from nonebot_plugin_orm import get_session
+from sqlalchemy import select, desc
 
 from pathlib import Path
 from typing import Union
 import json, random, re
 
-
+from .models import GroupMessage
 
 
 bot_names = list(get_driver().config.nickname)
@@ -19,9 +22,22 @@ with open(Path(__file__).parent / 'resources' / 'face_id.json', encoding='utf-8'
 
 
 
-async def get_str_message(bot: Bot, message: Message) -> str:
-    message_str = ''
+async def get_user_name(user_id: int) -> Union[str, None]:
+    "尝试从数据库中寻找用户昵称记录"
+    session = get_session()
+    async with session.begin():
+        result = await session.scalars(
+            select(GroupMessage.nickname)
+            .where(GroupMessage.user_id == user_id)
+            .order_by(desc(GroupMessage.timestamp))
+            .limit(1)
+        )
+        return result.first()
 
+
+async def get_str_message(bot: Bot, event: MessageEvent) -> str:
+    message_str = ''
+    message = event.message
     for seg in message:
         msg_type = seg.type
         if msg_type == 'text':
@@ -40,7 +56,10 @@ async def get_str_message(bot: Bot, message: Message) -> str:
                 user_info = await bot.get_stranger_info(user_id=seg.data['qq'])
                 message_str += f"@{user_info['nickname']}"
             except:
-                message_str += f"@{seg.data['qq']}"
+                if nickname := await get_user_name(seg.data['qq']):
+                    message_str += nickname
+                else:
+                    message_str += f"@{seg.data['qq']}"
         else:
             message_str += str(seg)
 

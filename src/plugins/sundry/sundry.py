@@ -118,7 +118,7 @@ async def handle_ill(bot: Bot, event: MessageEvent, arg: Message=CommandArg()):
 
 
 
-pokeme = on_notice()
+pokeme = on_notice(block=False)
 
 @pokeme.handle()
 async def _(bot: Bot, event: PokeNotifyEvent):

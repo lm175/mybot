@@ -9,7 +9,7 @@ __plugin_meta__ = PluginMetadata(
         "   示例：@机器人 早上好\n"
         " \n"
         "/clear\n"
-        "   介绍：清除记忆"
+        "   介绍：清除记忆（仅私聊）"
     ),
     extra={
         "notice": "每个群聊和私聊都是独立会话",

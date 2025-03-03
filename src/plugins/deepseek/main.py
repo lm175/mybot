@@ -62,7 +62,7 @@ async def _(bot: Bot, event: PrivateMessageEvent, session: async_scoped_session)
         messages.append({'role': role, 'content': content})
     
     # 添加本次对话
-    current_content = await get_str_message(bot, event.message)
+    current_content = await get_str_message(bot, event)
     if event.reply:
         reply_content = event.reply.message.extract_plain_text()
         if not reply_content:
@@ -160,7 +160,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         messages.append({'role': role, 'content': content})
     
     # 添加本次对话
-    current_content = f'{self_name}{await get_str_message(bot, event.message)}'
+    current_content = f'{self_name}{await get_str_message(bot, event)}'
     if event.reply:
         reply_content = event.reply.message.extract_plain_text()
         if not reply_content:
@@ -222,7 +222,7 @@ records = on_message(priority=99, block=False)
 
 @records.handle()
 async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
-    current_content = await get_str_message(bot, event.message)
+    current_content = await get_str_message(bot, event)
     if event.reply:
         reply_content = event.reply.message.extract_plain_text()
         if not reply_content:
