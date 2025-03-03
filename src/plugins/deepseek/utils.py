@@ -17,6 +17,8 @@ from .models import GroupMessage
 
 bot_names = list(get_driver().config.nickname)
 self_name = bot_names[0] if bot_names else 'bot'
+if self_name.startswith('@'):
+    self_name = self_name[1:]
 with open(Path(__file__).parent / 'resources' / 'face_id.json', encoding='utf-8') as f:
     faces: dict[str, str] = json.load(f)
 

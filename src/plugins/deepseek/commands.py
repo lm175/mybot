@@ -67,7 +67,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         .where(GroupMessage.group_id == event.group_id)
         .order_by(asc(GroupMessage.timestamp))
     )).all()
-    system_prompt = f'下面是一段群聊中的消息，格式为[time]nickname: message，请你总结聊天记录的内容，使用自然语言，不要重复原始消息格式'
+    system_prompt = f'下面是一段群聊中的消息，格式为[time]nickname: message，请你详细总结聊天记录的内容，使用自然语言，可以用markdown，不要重复原始消息格式'
     messages = [{'role': 'system', 'content': system_prompt}]
     for msg in records[-500:]:
         role = 'assistant' if msg.is_bot_msg else 'user'
@@ -75,7 +75,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         messages.append({'role': role, 'content': content})
     async with kimi_lock:
         resp = await asyncio.to_thread(send_kimi_request, str(messages))
-        reply_content = f"##推理\n{resp['reasoning_content']}\n\n\n##回复\n{resp['text']}" # type: ignore
+        reply_content = f"##推理\n>{resp['reasoning_content']}\n\n\n##回复\n{resp['text']}" # type: ignore
     try:
         await summarize.send(MessageSegment.node_custom(
             user_id=int(bot.self_id),
