@@ -13,7 +13,7 @@ from nonebot_plugin_orm import async_scoped_session
 from sqlalchemy import select, delete, asc
 import httpx
 
-import asyncio, json
+import asyncio
 
 from .models import PrivateMessage, GroupMessage
 from .config import config
@@ -74,8 +74,8 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         content = f'[{msg.timestamp}]{msg.content}'
         messages.append({'role': role, 'content': content})
     async with kimi_lock:
-        resp = await asyncio.to_thread(send_kimi_request, json.dumps(messages))
-        reply_content = f"##推理\n{resp['reasoning_conten']}\n\n\n##回复\n{resp['text']}" # type: ignore
+        resp = await asyncio.to_thread(send_kimi_request, str(messages))
+        reply_content = f"##推理\n{resp['reasoning_content']}\n\n\n##回复\n{resp['text']}" # type: ignore
     try:
         await summarize.send(MessageSegment.node_custom(
             user_id=int(bot.self_id),
