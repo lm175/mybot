@@ -11,16 +11,16 @@ from nonebot.log import logger
 from nonebot import require
 require("nonebot_plugin_orm")
 from nonebot_plugin_orm import async_scoped_session
-from sqlalchemy import select, delete, asc
+from sqlalchemy import select, asc
 from openai import OpenAI
 
 from datetime import datetime
 import asyncio, random
 
 
-from .models import PrivateMessage, GroupMessage, UserInfo
+from .models import PrivateMessage, GroupMessage
 from .config import config
-from .const import character, morning_path, night_path, API_WARNING_TIP, AUTHOR_WARNING_TIP
+from .const import character, blocklist, morning_path, night_path
 from .utils import (
     self_name,
     get_str_message,
@@ -69,16 +69,18 @@ chat = on_message(rule=to_me(), priority=98, block=True)
 
 @chat.handle()
 async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
+    # 违禁词检测
+    text = str(event.message)
+    for s in blocklist:
+        if s in text:
+            await chat.finish(random.choice([
+                '呜哇~你在说什么奇怪的话啦！（假装没看到）',
+                '不可以发这种奇怪的东西啦！（捂住耳朵）',
+            ]))
+    
     if event.user_id not in user_messages:
         user_messages[event.user_id] = True
-
     try:
-        # 获取用户信息
-        if user_info := await session.get(UserInfo, event.user_id):
-            # 违规次数过多
-            if user_info.warning_times >= 3:
-                return
-        
         # 没有内容时给出默认回复并reject等待下一句话
         if isinstance(event, GroupMessageEvent) and not str(event.message):
             session.add(GroupMessage(
@@ -195,24 +197,6 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                     is_bot_msg=True,
                     content=result
                 ))
-            await session.flush()
-
-            # api不当内容检测
-            if API_WARNING_TIP in reply_text:
-                if user_info:
-                    await chat.send(AUTHOR_WARNING_TIP)
-                    user_info.warning_times += 1
-                else:
-                    session.add(UserInfo(
-                        user_id=event.user_id,
-                        warning_times=1
-                    ))
-                if isinstance(event, PrivateMessageEvent):
-                    await session.execute(
-                        delete(PrivateMessage)
-                        .where(PrivateMessage.user_id == event.user_id)
-                    )
-
             await session.commit()
 
             # 简单配图
