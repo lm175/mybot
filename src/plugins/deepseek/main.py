@@ -11,10 +11,10 @@ from nonebot.log import logger
 from nonebot import require
 require("nonebot_plugin_orm")
 from nonebot_plugin_orm import async_scoped_session
-from sqlalchemy import select, asc
+from sqlalchemy import select, delete, asc
 from openai import OpenAI
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio, random
 
 
@@ -61,7 +61,8 @@ def send_request(messages: list):
 
 
 user_messages: dict[int, bool] = {}
-
+user_block_times: dict[int, list[datetime]] = {}
+blocked_users: dict[int, datetime] = {}
 
 
 chat = on_message(rule=to_me(), priority=98, block=True)
@@ -69,14 +70,43 @@ chat = on_message(rule=to_me(), priority=98, block=True)
 
 @chat.handle()
 async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
+    user_id = event.user_id
+    now = datetime.now()
+    # 检查是否在屏蔽名单
+    if user_id in blocked_users:
+        if now < blocked_users[user_id]:
+            await chat.finish()
+        else:
+            del blocked_users[user_id]
     # 违禁词检测
     text = str(event.message)
     for s in blocklist:
         if s in text:
-            await chat.finish(random.choice([
+            await chat.send(random.choice([
                 '呜哇~你在说什么奇怪的话啦！（假装没看到）',
                 '不可以发这种奇怪的东西啦！（捂住耳朵）',
             ]))
+            
+            if user_id not in user_block_times:
+                user_block_times[user_id] = []
+            times = user_block_times[user_id]
+
+            # 检查最近一小时内触发违禁词的次数
+            recent_times = [time for time in times if now - time < timedelta(hours=1)]
+            if len(recent_times) >= 10:
+                if isinstance(event, PrivateMessageEvent):
+                    await session.execute(
+                        delete(PrivateMessage)
+                        .where(PrivateMessage.user_id == user_id)
+                    )
+                    await session.commit()
+                blocked_users[user_id] = now + timedelta(hours=1)
+                await chat.send(f'(系统提示：用户{user_id}违规次数过多，已屏蔽一小时)')
+            else:
+                recent_times.append(now)
+                user_block_times[user_id] = recent_times
+
+            return
     
     if event.user_id not in user_messages:
         user_messages[event.user_id] = True
