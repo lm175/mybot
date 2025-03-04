@@ -70,7 +70,7 @@ chat = on_message(rule=to_me(), priority=98, block=True)
 @chat.handle()
 async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
     if event.user_id not in user_messages:
-        user_messages[event.user_id] = False
+        user_messages[event.user_id] = True
 
     try:
         # 获取用户信息

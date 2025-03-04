@@ -60,7 +60,7 @@ async def _():
             url=f'{SILICONFLOW_API_URL}/user/info',
             headers={
                 'Accept': 'application/json',
-                'Authorization': f'Bearer {DEEPSEEK_API_KEY}'
+                'Authorization': f'Bearer {SILICONFLOW_API_KEY}'
             }
         )
         ds_resp = await cli.get(
