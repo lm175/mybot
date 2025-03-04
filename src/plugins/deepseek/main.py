@@ -114,7 +114,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 .where(GroupMessage.group_id == event.group_id)
                 .order_by(asc(GroupMessage.timestamp))
             )).all()
-            system_prompt = f'{character}\n下面是一段群聊中的消息，格式为[time]nickname: message，请你以聊天记录作为参考回复最后一位用户的消息。回复时使用自然语言，不要重复之前说过的内容，不要重复原始消息格式。\n若用户发送了非常不适当的内容，你可以在回复中加入“{API_WARNING_TIP}”来终止对话'
+            system_prompt = f'{character}\n下面是一段群聊中的消息，格式为[time]nickname: message，请你以聊天记录作为参考回复最后一位用户的消息。回复时使用自然语言，不要重复之前说过的内容，不要重复原始消息格式。'
             messages = [{'role': 'system', 'content': system_prompt}]
         else:
             records = (await session.scalars(
@@ -122,7 +122,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 .where(PrivateMessage.user_id == event.user_id)
                 .order_by(asc(PrivateMessage.timestamp))
             )).all()
-            system_prompt = f'{character}\n下面是你和一位用户的聊天，格式为[time]message，回复时使用自然语言，不要重复之前说过的内容，不要重复原始消息格式。\n若用户发送了非常不适当的内容，你可以在回复中加入“{API_WARNING_TIP}”来终止对话'
+            system_prompt = f'{character}\n下面是你和一位用户的聊天，格式为[time]message，回复时使用自然语言，不要重复之前说过的内容，不要重复原始消息格式。'
             messages = [{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': f'我是{event.sender.nickname}'}]
         for msg in records[-MAX_LEN:]:
             role = 'assistant' if msg.is_bot_msg else 'user'
