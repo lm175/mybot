@@ -7,10 +7,12 @@ from nonebot.adapters.onebot.v11 import (
     Message,
     MessageSegment
 )
+from nonebot.log import logger
 from nonebot import require
 require("nonebot_plugin_orm")
 from nonebot_plugin_orm import async_scoped_session
 from sqlalchemy import select, delete, asc
+from openai import OpenAI
 import httpx
 
 import asyncio, re
@@ -19,40 +21,56 @@ from .models import PrivateMessage, GroupMessage
 from .config import config
 from .utils import self_name
 
-from .revKimi import Chatbot as KimiBot
+
+SILICONFLOW_API_URL = config.siliconflow_api_url
+SILICONFLOW_API_KEY = config.siliconflow_api_key
+SILICONFLOW_SUMMARY_MODEL = config.siliconflow_summary_model
+DEEPSEEK_API_URL = config.deepseek_api_url
+DEEPSEEK_API_KEY = config.deepseek_api_key
+DEEPSEEK_SUMMARY_MODEL = config.deepseek_summary_model
 
 
-base_url = config.deepseek_api_url
-api_key = config.deepseek_api_key
+siliconflow_client = OpenAI(api_key=SILICONFLOW_API_KEY, base_url=SILICONFLOW_API_URL)
+deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_API_URL)
+
+def send_request(messages: list):
+    try:
+        result = siliconflow_client.chat.completions.create(
+            model=SILICONFLOW_SUMMARY_MODEL,
+            messages=messages,
+            stream=False,
+        )
+    except:
+        result = deepseek_client.chat.completions.create(
+            model=DEEPSEEK_SUMMARY_MODEL,
+            messages=messages,
+            stream=False,
+        )
+    finally:
+        return result
 
 
-kimi_bot = KimiBot({
-    "access_token": config.kimi_access_token,
-    "refresh_token": config.kimi_refresh_token
-})
-kimi_lock = asyncio.Lock()
-def send_kimi_request(prompt: str):
-    return kimi_bot.ask(
-        prompt=prompt,
-        conversation_id='',
-        use_search=True
-    )
 
-
-
-show_balance = on_command('show balance', priority=10, block=True, permission=SUPERUSER)
+show_balance = on_command('showbalance', priority=10, block=True, permission=SUPERUSER)
 
 @show_balance.handle()
 async def _():
     async with httpx.AsyncClient() as cli:
-        resp = await cli.get(
-            url=f'{base_url}/user/balance',
+        sf_resp = await cli.get(
+            url=f'{SILICONFLOW_API_URL}/user/info',
             headers={
                 'Accept': 'application/json',
-                'Authorization': f'Bearer {api_key}'
+                'Authorization': f'Bearer {DEEPSEEK_API_KEY}'
             }
         )
-        await show_balance.send(str(resp.json()))
+        ds_resp = await cli.get(
+            url=f'{DEEPSEEK_API_URL}/user/balance',
+            headers={
+                'Accept': 'application/json',
+                'Authorization': f'Bearer {DEEPSEEK_API_KEY}'
+            }
+        )
+        await show_balance.send(f'siliconflow\n{sf_resp.json()}\n\ndeepseek\n{ds_resp.json()}')
 
 
 
@@ -69,13 +87,15 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
     )).all()
     system_prompt = f'下面是一段群聊中的消息，格式为[time]nickname: message，请你详细总结聊天记录的内容。使用自然语言，回复用中文，可以用markdown，不要重复原始消息格式'
     messages = [{'role': 'system', 'content': system_prompt}]
-    for msg in records[-500:]:
+    for msg in records[-200:]:
         role = 'assistant' if msg.is_bot_msg else 'user'
         content = f'[{msg.timestamp}]{msg.content}'
         messages.append({'role': role, 'content': content})
-    async with kimi_lock:
-        resp = await asyncio.to_thread(send_kimi_request, str(messages))
-        reply_content = f"##推理\n>{re.sub(r'\n{2,}', '\n', resp['reasoning_content'])}\n\n\n##回复\n{resp['text']}" # type: ignore
+    resp = await asyncio.to_thread(send_request, messages)
+    resp_content = str(resp.choices[0].message.content)
+    resp_thinking = getattr(resp.choices[0].message, 'reasoning_content', '')
+    cleaned_thinking = re.sub(r'\n{2,}', '\n', resp_thinking)
+    reply_content = f"#深度思考\n>{cleaned_thinking}\n\n\n#回复\n{resp_content}"
     try:
         await summarize.send(MessageSegment.node_custom(
             user_id=int(bot.self_id),
@@ -104,9 +124,13 @@ clear = on_fullmatch(('clear', '/clear'), priority=10, block=True)
 
 @clear.handle()
 async def _(event: PrivateMessageEvent, session: async_scoped_session):
-    await session.execute(
-        delete(PrivateMessage)
-        .where(PrivateMessage.user_id == event.user_id)
-    )
-    await session.commit()
-    await clear.send(f'唔... {self_name}好像忘记了很多事情呢')
+    try:
+        await session.execute(
+            delete(PrivateMessage)
+            .where(PrivateMessage.user_id == event.user_id)
+        )
+        await session.commit()
+        await clear.send(f'唔... {self_name}好像忘记了很多事情呢')
+    except Exception as e:
+        logger.error(e)
+        await session.rollback()
