@@ -158,6 +158,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
 
         # 检查上次对话是否已经结束
         if not user_messages[event.user_id]:
+            await session.commit()
             return await chat.finish(f"{event.sender.nickname}同学问得太快啦，{self_name}还没说完呢！")
         else:
             user_messages[event.user_id] = False
