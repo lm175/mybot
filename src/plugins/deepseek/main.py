@@ -2,6 +2,7 @@ from nonebot import on_message
 from nonebot.rule import to_me
 from nonebot.adapters.onebot.v11 import (
     Bot,
+    MessageEvent,
     PrivateMessageEvent,
     GroupMessageEvent,
     MessageSegment
@@ -9,16 +10,16 @@ from nonebot.adapters.onebot.v11 import (
 from nonebot import require
 require("nonebot_plugin_orm")
 from nonebot_plugin_orm import async_scoped_session
-from sqlalchemy import select, asc
+from sqlalchemy import select, delete, asc
 from openai import OpenAI
 
 from datetime import datetime
 import asyncio, random
 
 
-from .models import PrivateMessage, GroupMessage
+from .models import PrivateMessage, GroupMessage, UserInfo
 from .config import config
-from .const import character, morning_path, night_path
+from .const import character, morning_path, night_path, API_WARNING_TIP, AUTHOR_WARNING_TIP
 from .utils import (
     self_name,
     get_str_message,
@@ -48,6 +49,17 @@ chat = on_message(rule=to_me(), priority=98, block=True)
 
 @chat.handle()
 async def _(bot: Bot, event: PrivateMessageEvent, session: async_scoped_session):
+    # 获取用户信息
+    if user_info := await session.get(UserInfo, event.user_id):
+        if user_info.warning_times >= 3:
+            return
+    # else:
+    #     session.add(UserInfo(
+    #         user_id=event.user_id,
+    #         warning_times=0
+    #     ))
+    #     await session.flush()
+
     # 获取历史记录
     records = (await session.scalars(
         select(PrivateMessage)
@@ -99,6 +111,23 @@ async def _(bot: Bot, event: PrivateMessageEvent, session: async_scoped_session)
             is_bot_msg=True,
             content=result
         ))
+        await session.flush()
+
+        # api不当内容检测
+        if API_WARNING_TIP in text:
+            if user_info:
+                await chat.send(AUTHOR_WARNING_TIP)
+                user_info.warning_times += 1
+            else:
+                session.add(UserInfo(
+                    user_id=event.user_id,
+                    warning_times=1
+                ))
+            await session.execute(
+                delete(PrivateMessage)
+                .where(PrivateMessage.user_id == event.user_id)
+            )
+
         await session.commit()
 
         # 简单配图

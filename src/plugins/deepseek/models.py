@@ -24,3 +24,8 @@ class GroupMessage(Model):
     is_bot_msg: Mapped[bool] = mapped_column(default=False)
     content: Mapped[str] = mapped_column(Text)
     timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class UserInfo(Model):
+    user_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    warning_times: Mapped[int]
