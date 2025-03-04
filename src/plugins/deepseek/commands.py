@@ -108,3 +108,5 @@ async def _(event: PrivateMessageEvent, session: async_scoped_session):
         delete(PrivateMessage)
         .where(PrivateMessage.user_id == event.user_id)
     )
+    await session.commit()
+    await clear.send(f'唔... {self_name}好像忘记了很多事情呢')
