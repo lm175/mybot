@@ -75,7 +75,7 @@ async def _():
 
 
 
-summarize = on_fullmatch('总结一下', priority=10, block=True)
+summarize = on_fullmatch(('总结一下', '消息省流', '/消息省流'), priority=10, block=True)
 
 @summarize.handle()
 async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
