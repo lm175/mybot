@@ -60,9 +60,9 @@ def send_request(messages: list):
         return result
 
 
-user_messages: dict[int, bool] = {}
-user_block_times: dict[int, list[datetime]] = {}
-blocked_users: dict[int, datetime] = {}
+user_messages: dict[int, bool] = {} # 标记上一次对话是否已经结束
+user_block_times: dict[int, list[datetime]] = {}    # 记录用户触发违禁词的时间
+blocked_users: dict[int, datetime] = {} # 屏蔽名单
 
 
 chat = on_message(rule=to_me(), priority=98, block=True)
@@ -191,14 +191,19 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
         # 检查上次对话是否已经结束
         if not user_messages[event.user_id]:
             await session.commit()
-            return await chat.finish(f"{event.sender.nickname}同学问得太快啦，{self_name}还没说完呢！")
-        else:
-            user_messages[event.user_id] = False
+            return await chat.finish(f"{event.sender.nickname}同学问得太快啦！{self_name}的话还没说完呢> <")
 
         # 发送api请求并回复
         print(messages)
-        response = await asyncio.to_thread(send_request, messages)
-        reply_text = response.choices[0].message.content
+        user_messages[event.user_id] = False
+        try:
+            response = await asyncio.to_thread(send_request, messages)
+            reply_text = response.choices[0].message.content
+        except:
+            reply_text = None
+        finally:
+            user_messages[event.user_id] = True
+
         if reply_text:
             parts = clean_format(reply_text)
             result = '' # 存入数据库的content
@@ -207,7 +212,6 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 result += f'{p}\n'
                 res = await chat.send(p)
                 reply_message_id = res['message_id']
-            user_messages[event.user_id] = True
 
             # 保存bot回复的内容
             if isinstance(event, GroupMessageEvent):
