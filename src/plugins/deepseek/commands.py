@@ -1,4 +1,5 @@
 from nonebot import on_command, on_fullmatch
+from nonebot.rule import is_type
 from nonebot.permission import SUPERUSER
 from nonebot.adapters.onebot.v11 import (
     Bot,
@@ -75,7 +76,7 @@ async def _():
 
 
 
-summarize = on_fullmatch(('总结一下', '消息省流', '/消息省流'), priority=10, block=True)
+summarize = on_fullmatch(('总结一下', '/总结一下', '消息省流', '/消息省流'), priority=10, block=True)
 
 @summarize.handle()
 async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
@@ -85,7 +86,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
         .where(GroupMessage.group_id == event.group_id)
         .order_by(asc(GroupMessage.timestamp))
     )).all()
-    system_prompt = f'下面是一段群聊中的消息，格式为[time]nickname: message，请你详细总结聊天记录的内容。使用自然语言，回复用中文，可以用markdown，不要重复原始消息格式'
+    system_prompt = f'下面是一段群聊中的消息，格式为[time]nickname: message，请你总结聊天记录的内容。使用自然语言，回复用中文，可以用markdown，不要使用原始消息格式'
     messages = [{'role': 'system', 'content': system_prompt}]
     for msg in records[-200:]:
         role = 'assistant' if msg.is_bot_msg else 'user'
@@ -120,7 +121,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
 
 
 
-clear = on_fullmatch(('clear', '/clear'), priority=10, block=True)
+clear = on_fullmatch(('clear', '/clear'), rule=is_type(PrivateMessageEvent), priority=10, block=True)
 
 @clear.handle()
 async def _(event: PrivateMessageEvent, session: async_scoped_session):

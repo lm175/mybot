@@ -71,6 +71,7 @@ chat = on_message(rule=to_me(), priority=98, block=True)
 @chat.handle()
 async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
     user_id = event.user_id
+    group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
     now = datetime.now()
     # 检查是否在屏蔽名单
     if user_id in blocked_users:
@@ -93,30 +94,32 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
 
             # 检查最近一小时内触发违禁词的次数
             recent_times = [time for time in times if now - time < timedelta(hours=1)]
-            if len(recent_times) >= 10:
-                if isinstance(event, PrivateMessageEvent):
+            if len(recent_times) >= 5:
+                blocked_users[user_id] = now + timedelta(hours=1)
+                if group_id:
+                    await chat.send(f'(系统提示：用户{user_id}违规次数过多，已屏蔽一小时)')
+                else:
                     await session.execute(
                         delete(PrivateMessage)
                         .where(PrivateMessage.user_id == user_id)
                     )
                     await session.commit()
-                blocked_users[user_id] = now + timedelta(hours=1)
-                await chat.send(f'(系统提示：用户{user_id}违规次数过多，已屏蔽一小时)')
+                    await chat.send(f'(系统提示：用户{user_id}违规次数过多，已清空对话记录并屏蔽一小时)')
             else:
                 recent_times.append(now)
                 user_block_times[user_id] = recent_times
 
             return
     
-    if event.user_id not in user_messages:
-        user_messages[event.user_id] = True
+    if user_id not in user_messages:
+        user_messages[user_id] = True
     try:
         # 没有内容时给出默认回复并reject等待下一句话
-        if isinstance(event, GroupMessageEvent) and not str(event.message):
+        if group_id and not str(event.message) and not event.reply:
             session.add(GroupMessage(
                 message_id=event.message_id,
-                group_id=event.group_id,
-                user_id=event.user_id,
+                group_id=group_id,
+                user_id=user_id,
                 nickname=str(event.sender.nickname),
                 content=self_name
             ))
@@ -130,8 +133,8 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
             res = await chat.send(default_reply)
             session.add(GroupMessage(
                 message_id=res['message_id'],
-                user_id=event.user_id,
-                group_id=event.group_id,
+                user_id=user_id,
+                group_id=group_id,
                 nickname=self_name,
                 is_bot_msg=True,
                 content=default_reply
@@ -140,10 +143,10 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
             await chat.reject()
 
         # 获取历史记录
-        if isinstance(event, GroupMessageEvent):
+        if group_id:
             records = (await session.scalars(
                 select(GroupMessage)
-                .where(GroupMessage.group_id == event.group_id)
+                .where(GroupMessage.group_id == group_id)
                 .order_by(asc(GroupMessage.timestamp))
             )).all()
             system_prompt = f'{character}\n下面是一段群聊中的消息，格式为[time]nickname: message，请你以聊天记录作为参考回复最后一位用户的消息。回复时使用自然语言，不要重复之前说过的内容，不要重复原始消息格式。'
@@ -151,7 +154,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
         else:
             records = (await session.scalars(
                 select(PrivateMessage)
-                .where(PrivateMessage.user_id == event.user_id)
+                .where(PrivateMessage.user_id == user_id)
                 .order_by(asc(PrivateMessage.timestamp))
             )).all()
             system_prompt = f'{character}\n下面是你和一位用户的聊天，格式为[time]message，回复时使用自然语言，不要重复之前说过的内容，不要重复原始消息格式。'
@@ -162,74 +165,68 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
             messages.append({'role': role, 'content': content})
 
         # 添加本次对话
-        current_content = f'{self_name}{await get_str_message(bot, event)}'
-        if event.reply:
-            reply_content = event.reply.message.extract_plain_text()
-            if not reply_content:
-                reply_content = ['图片']
-            current_content = f'(回复“{event.reply.sender.nickname}: {reply_content}”)' + current_content
+        message_str = await get_str_message(bot, event)
         formatted_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if isinstance(event, GroupMessageEvent):
-            messages.append({'role': 'user', 'content': f'[{formatted_now}]{event.sender.nickname}: {current_content}'})
+        if group_id:
+            messages.append({'role': 'user', 'content': f'[{formatted_now}]{event.sender.nickname}: {message_str}'})
             session.add(GroupMessage(
                 message_id=event.message_id,
-                group_id=event.group_id,
-                user_id=event.user_id,
+                group_id=group_id,
+                user_id=user_id,
                 nickname=str(event.sender.nickname),
-                content=current_content
+                content=message_str
             ))
         else:
-            messages.append({'role': 'user', 'content': f'[{formatted_now}]{current_content}'})
+            messages.append({'role': 'user', 'content': f'[{formatted_now}]{message_str}'})
             session.add(PrivateMessage(
                 message_id=event.message_id,
-                user_id=event.user_id,
+                user_id=user_id,
                 nickname=str(event.sender.nickname),
-                content=current_content
+                content=message_str
             ))
         await session.flush()
 
         # 检查上次对话是否已经结束
-        if not user_messages[event.user_id]:
+        if not user_messages[user_id]:
             await session.commit()
             return await chat.finish(f"{event.sender.nickname}同学问得太快啦！{self_name}的话还没说完呢> <")
 
-        # 发送api请求并回复
+        # 发送api请求
         print(messages)
-        user_messages[event.user_id] = False
+        user_messages[user_id] = False
         try:
             response = await asyncio.to_thread(send_request, messages)
             reply_text = response.choices[0].message.content
         except:
             reply_text = None
         finally:
-            user_messages[event.user_id] = True
+            user_messages[user_id] = True
 
+        # 回复
         if reply_text:
-            parts = clean_format(reply_text)
-            result = '' # 存入数据库的content
+            messages, result_str = await clean_format(reply_text)
             reply_message_id = 0
-            for p in parts:
-                result += f'{p}\n'
-                res = await chat.send(p)
+            for msg in messages:
+                res = await chat.send(msg)
                 reply_message_id = res['message_id']
 
             # 保存bot回复的内容
-            if isinstance(event, GroupMessageEvent):
+            if group_id:
                 session.add(GroupMessage(
                     message_id=reply_message_id,
-                    user_id=event.user_id,
-                    group_id=event.group_id,
+                    user_id=user_id,
+                    group_id=group_id,
                     nickname=self_name,
                     is_bot_msg=True,
-                    content=result
+                    content=result_str
                 ))
             else:
                 session.add(PrivateMessage(
                     message_id=reply_message_id,
-                    user_id=event.user_id,
+                    user_id=user_id,
                     nickname=self_name,
                     is_bot_msg=True,
-                    content=result
+                    content=result_str
                 ))
             await session.commit()
 
@@ -258,18 +255,13 @@ records = on_message(priority=99, block=False)
 @records.handle()
 async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
     try:
-        current_content = await get_str_message(bot, event)
-        if event.reply:
-            reply_content = event.reply.message.extract_plain_text()
-            if not reply_content:
-                reply_content = ['图片']
-            current_content = f'(回复“{event.reply.sender.nickname}: {reply_content}”)' + current_content
+        message_str = await get_str_message(bot, event)
         session.add(GroupMessage(
             message_id=event.message_id,
             group_id=event.group_id,
             user_id=event.user_id,
             nickname=str(event.sender.nickname),
-            content=current_content
+            content=message_str
         ))
         await session.commit()
     except Exception as e:

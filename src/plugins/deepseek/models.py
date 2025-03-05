@@ -26,6 +26,6 @@ class GroupMessage(Model):
     timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
-class UserInfo(Model):
-    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
-    warning_times: Mapped[int]
+# class UserInfo(Model):
+#     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
+#     warning_times: Mapped[int]
