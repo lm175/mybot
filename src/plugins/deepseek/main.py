@@ -217,63 +217,67 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
         
         async with session_status.lock:
             session_status.dict_[session_id] = False
-        while messages:
-            # 发送api请求
-            logger.info(messages)
-            try:
-                response = await asyncio.to_thread(send_request, messages)
-                reply_text = response.choices[0].message.content
-                logger.info(reply_text)
-            except:
-                reply_text = None
+        try:
+            while messages:
+                # 发送api请求
+                logger.info(messages)
+                try:
+                    response = await asyncio.to_thread(send_request, messages)
+                    reply_text = response.choices[0].message.content
+                    logger.info(reply_text)
+                except:
+                    reply_text = None
 
-            # 回复
-            if reply_text:
-                result_messages, result_str = await clean_format(reply_text)
-                reply_message_id = 0
-                for msg in result_messages:
-                    res = await chat.send(msg)
-                    reply_message_id = res['message_id']
+                # 回复
+                if reply_text:
+                    result_messages, result_str = await clean_format(reply_text)
+                    reply_message_id = 0
+                    for msg in result_messages:
+                        res = await chat.send(msg)
+                        reply_message_id = res['message_id']
 
-                # 保存bot回复的内容
-                if group_id:
-                    session.add(GroupMessage(
-                        message_id=reply_message_id,
-                        user_id=user_id,
-                        group_id=group_id,
-                        nickname=self_name,
-                        is_bot_msg=True,
-                        content=result_str
-                    ))
-                else:
-                    session.add(PrivateMessage(
-                        message_id=reply_message_id,
-                        user_id=user_id,
-                        nickname=self_name,
-                        is_bot_msg=True,
-                        content=result_str
-                    ))
-                    # 获取暂存的消息
-                    async with pending_messages.lock:
-                        if messages := pending_messages.dict_.get(user_id):
-                            del pending_messages.dict_[user_id]
-                            formatted_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            messages.insert(-1, {'role': 'assistant', 'content': f'[{formatted_now}]{result_str}'})
-                await session.flush()
+                    # 保存bot回复的内容
+                    if group_id:
+                        session.add(GroupMessage(
+                            message_id=reply_message_id,
+                            user_id=user_id,
+                            group_id=group_id,
+                            nickname=self_name,
+                            is_bot_msg=True,
+                            content=result_str
+                        ))
+                    else:
+                        session.add(PrivateMessage(
+                            message_id=reply_message_id,
+                            user_id=user_id,
+                            nickname=self_name,
+                            is_bot_msg=True,
+                            content=result_str
+                        ))
+                        # 获取暂存的消息
+                        async with pending_messages.lock:
+                            if messages := pending_messages.dict_.get(user_id):
+                                del pending_messages.dict_[user_id]
+                                formatted_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                messages.insert(-1, {'role': 'assistant', 'content': f'[{formatted_now}]{result_str}'})
+                    await session.flush()
 
-                # 简单配图
-                msgstr = event.message.extract_plain_text()
-                if '早上好' in msgstr or '早安' in msgstr or msgstr == '早':
-                    pictures = morning_path
-                elif '晚安' in msgstr:
-                    pictures = night_path
-                else:
-                    await chat.finish()
-                pic = await get_random_picture(pictures)
-                if pic:
-                    await chat.send(MessageSegment.image(pic))
-        async with session_status.lock:
-            session_status.dict_[session_id] = True
+                    # 简单配图
+                    msgstr = event.message.extract_plain_text()
+                    if '早上好' in msgstr or '早安' in msgstr or msgstr == '早':
+                        pictures = morning_path
+                    elif '晚安' in msgstr:
+                        pictures = night_path
+                    else:
+                        await chat.finish()
+                    pic = await get_random_picture(pictures)
+                    if pic:
+                        await chat.send(MessageSegment.image(pic))
+        except Exception as e:
+            logger.error(e)
+        finally:
+            async with session_status.lock:
+                session_status.dict_[session_id] = True
         await session.commit()
 
     except Exception as e:
