@@ -130,6 +130,8 @@ async def clean_format(text: str) -> tuple[list[Message], str]:
                         message += MessageSegment.image(image)
                     else:
                         message += '[动画表情]'
+                elif segment.startswith('回复'):
+                    pass
                 else:
                     message += f'[{segment}]'
         result_msg.append(message)
