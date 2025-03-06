@@ -192,11 +192,12 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
             return await chat.finish(f"{event.sender.nickname}同学问得太快啦！{self_name}的话还没说完呢> <")
 
         # 发送api请求
-        print(messages)
+        logger.info(messages)
         user_messages[user_id] = False
         try:
             response = await asyncio.to_thread(send_request, messages)
             reply_text = response.choices[0].message.content
+            logger.info(reply_text)
         except:
             reply_text = None
         finally:

@@ -79,10 +79,10 @@ async def get_str_message(bot: Bot, event: MessageEvent) -> str:
     
 
     result = await _get_str(event.message)
-    if isinstance(event, GroupMessageEvent):
+    if event.is_tome() and isinstance(event, GroupMessageEvent):
         result = self_name + result
     if event.reply:
-        reply_content = _get_str(event.reply.message)
+        reply_content = await _get_str(event.reply.message)
         result = f'[回复“{event.reply.sender.nickname}: {reply_content}”]' + result
 
     return result
