@@ -69,15 +69,15 @@ class SessionStatus(ManageDict):
     dict_: dict[str, bool] = {}
 class PendingMessages(ManageDict):
     dict_: dict[int, list[dict[str, str]]] = {}
-class BlockTimes(ManageDict):
-    dict_: dict[int, list[datetime]] = {}
-class BlockUsers(ManageDict):
-    dict_: dict[int, datetime] = {}
+# class BlockTimes(ManageDict):
+#     dict_: dict[int, list[datetime]] = {}
+# class BlockUsers(ManageDict):
+#     dict_: dict[int, datetime] = {}
 
 session_status = SessionStatus()    # 标记上一次对话是否已经结束
 pending_messages = PendingMessages()    # 用户待处理消息
-block_times = BlockTimes()  # 记录用户触发违禁词的时间
-blocked_users = BlockUsers()    # 屏蔽名单
+# block_times = BlockTimes()  # 记录用户触发违禁词的时间
+# blocked_users = BlockUsers()    # 屏蔽名单
 
 
 chat = on_message(rule=to_me(), priority=98, block=True)
@@ -87,14 +87,14 @@ chat = on_message(rule=to_me(), priority=98, block=True)
 async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
     user_id = event.user_id
     group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
-    now = datetime.now()
-    # 检查是否在屏蔽名单
-    async with blocked_users.lock:
-        if user_id in blocked_users.dict_:
-            if now < blocked_users.dict_[user_id]:
-                await chat.finish()
-            else:
-                del blocked_users.dict_[user_id]
+    # now = datetime.now()
+    # # 检查是否在屏蔽名单
+    # async with blocked_users.lock:
+    #     if user_id in blocked_users.dict_:
+    #         if now < blocked_users.dict_[user_id]:
+    #             await chat.finish()
+    #         else:
+    #             del blocked_users.dict_[user_id]
     # 违禁词检测
     text = str(event.message)
     for s in blocklist:
@@ -104,28 +104,28 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 '不可以发这种奇怪的东西啦！（捂住耳朵）',
             ]))
             
-            async with block_times.lock:
-                if user_id not in block_times.dict_:
-                    block_times.dict_[user_id] = []
-                times = block_times.dict_[user_id]
+            # async with block_times.lock:
+            #     if user_id not in block_times.dict_:
+            #         block_times.dict_[user_id] = []
+            #     times = block_times.dict_[user_id]
 
-                # 检查最近一小时内触发违禁词的次数
-                recent_times = [time for time in times if now - time < timedelta(hours=1)]
-                if len(recent_times) >= 5:
-                    async with blocked_users.lock:
-                        blocked_users.dict_[user_id] = now + timedelta(hours=1)
-                    if group_id:
-                        await chat.send(f'(用户{user_id}违规次数过多，已屏蔽一小时)')
-                    else:
-                        await session.execute(
-                            delete(PrivateMessage)
-                            .where(PrivateMessage.user_id == user_id)
-                        )
-                        await session.commit()
-                        await chat.send(f'(用户{user_id}违规次数过多，已清空对话记录并屏蔽一小时)')
-                else:
-                    recent_times.append(now)
-                    block_times.dict_[user_id] = recent_times
+            #     # 检查最近一小时内触发违禁词的次数
+            #     recent_times = [time for time in times if now - time < timedelta(hours=1)]
+            #     if len(recent_times) >= 5:
+            #         async with blocked_users.lock:
+            #             blocked_users.dict_[user_id] = now + timedelta(hours=1)
+            #         if group_id:
+            #             await chat.send(f'(用户{user_id}违规次数过多，已屏蔽一小时)')
+            #         else:
+            #             await session.execute(
+            #                 delete(PrivateMessage)
+            #                 .where(PrivateMessage.user_id == user_id)
+            #             )
+            #             await session.commit()
+            #             await chat.send(f'(用户{user_id}违规次数过多，已清空对话记录并屏蔽一小时)')
+            #     else:
+            #         recent_times.append(now)
+            #         block_times.dict_[user_id] = recent_times
 
             return
     
