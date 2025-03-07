@@ -8,6 +8,7 @@ from nonebot.adapters.onebot.v11 import (
     MessageSegment
 )
 from nonebot.log import logger
+from nonebot.exception import FinishedException, RejectedException
 from nonebot import require
 require("nonebot_plugin_orm")
 from nonebot_plugin_orm import async_scoped_session
@@ -132,10 +133,9 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
     async with session_status.lock:
         if session_id not in session_status.dict_:
             session_status.dict_[session_id] = True
-
-    # 没有内容时给出默认回复并reject等待下一句话
-    if group_id and not str(event.message) and not event.reply:
-        try:
+    try:
+        # 没有内容时给出默认回复并reject等待下一句话
+        if group_id and not str(event.message) and not event.reply:
             session.add(GroupMessage(
                 message_id=event.message_id,
                 group_id=group_id,
@@ -160,13 +160,8 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 content=default_reply
             ))
             await session.commit()
-        except Exception as e:
-            logger.error(e)
-            await session.rollback()
-        finally:
             await chat.reject()
-        
-    try:
+
         # 获取历史记录
         if group_id:
             records = (await session.scalars(
@@ -286,6 +281,10 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 session_status.dict_[session_id] = True
         await session.commit()
 
+    except FinishedException:
+        pass
+    except RejectedException:
+        pass
     except Exception as e:
         logger.error(e)
         await session.rollback()
