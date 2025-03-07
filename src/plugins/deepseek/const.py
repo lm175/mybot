@@ -1,4 +1,13 @@
 from pathlib import Path
+import json
+
+replies_path = Path(__file__).parent / 'resources' / 'replies.json'
+with open(replies_path, 'r', encoding='utf-8') as f:
+    replies: dict[str, list[str]] = json.load(f)
+default_replies = replies['default_replies']
+blocklist_resplies = replies['blocklist_resplies']
+busy_replies = replies['busy_replies']
+error_replies = replies['error_replies']
 
 
 dir_path = Path("data/deepseek/")
@@ -27,3 +36,16 @@ if not night_path.exists():
 images_path = dir_path / 'images'
 if not images_path.exists():
     images_path.mkdir(parents=True, exist_ok=True)
+
+
+__all__ = [
+    "default_replies",
+    "blocklist_resplies",
+    "busy_replies",
+    "error_replies",
+    "character",
+    "blocklist",
+    "morning_path",
+    "night_path",
+    "images_path",
+]

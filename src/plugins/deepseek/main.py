@@ -21,11 +21,12 @@ import asyncio, random
 
 from .models import PrivateMessage, GroupMessage
 from .config import config
-from .const import character, blocklist, morning_path, night_path
+from .const import *
 from .utils import (
     self_name,
     get_str_message,
     get_random_picture,
+    get_random_reply,
     clean_format
 )
 
@@ -87,6 +88,7 @@ chat = on_message(rule=to_me(), priority=98, block=True)
 async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
     user_id = event.user_id
     group_id = event.group_id if isinstance(event, GroupMessageEvent) else None
+    user_name = str(event.sender.nickname)
     # now = datetime.now()
     # # 检查是否在屏蔽名单
     # async with blocked_users.lock:
@@ -99,10 +101,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
     text = str(event.message)
     for s in blocklist:
         if s in text:
-            await chat.send(random.choice([
-                '呜哇~你在说什么奇怪的话啦！（假装没看到）',
-                '不可以发这种奇怪的东西啦！（捂住耳朵）',
-            ]))
+            await chat.send(await get_random_reply(blocklist_resplies, user_name))
             
             # async with block_times.lock:
             #     if user_id not in block_times.dict_:
@@ -141,16 +140,12 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 message_id=event.message_id,
                 group_id=group_id,
                 user_id=user_id,
-                nickname=str(event.sender.nickname),
+                nickname=user_name,
                 content=self_name
             ))
             await session.flush()
 
-            default_reply = random.choice([
-                '嗯？在呢~(๑・ω・๑)',
-                f'嗯嗯，{self_name}在这里呢(◍•ᴗ•◍)',
-                f'{self_name}在哦'
-            ])
+            default_reply = await get_random_reply(default_replies, user_name)
             res = await chat.send(default_reply)
             session.add(GroupMessage(
                 message_id=res['message_id'],
@@ -216,7 +211,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
         if not session_status.dict_[session_id]:
             await session.commit()
             if group_id:
-                await chat.send(f"{event.sender.nickname}同学问得太快啦！{self_name}的话还没说完呢> <")
+                await chat.send(await get_random_reply(busy_replies, user_name))
             else:
                 async with pending_messages.lock:
                     pending_messages.dict_[user_id] = messages
@@ -292,7 +287,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
     except Exception as e:
         logger.error(e)
         await session.rollback()
-        await chat.send(f'唔，{self_name}刚刚好像有点走神了呢... {event.sender.nickname}同学可以再说一遍吗？')
+        await chat.send(await get_random_reply(error_replies, user_name))
 
 
 

@@ -146,3 +146,9 @@ async def get_random_picture(path: Path) -> Path | None:
     if not files:
         return None
     return random.choice(files)
+
+
+async def get_random_reply(replies: list[str], user_name: str) -> str:
+    result = random.choice(replies)
+    result = result.replace('{me}', self_name).replace('{user}', user_name)
+    return result
