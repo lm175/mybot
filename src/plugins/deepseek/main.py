@@ -248,6 +248,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                             is_bot_msg=True,
                             content=result_str
                         ))
+                        messages = None
                     else:
                         session.add(PrivateMessage(
                             message_id=reply_message_id,
@@ -267,12 +268,11 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                     # 简单配图
                     msgstr = event.message.extract_plain_text()
                     if '早上好' in msgstr or '早安' in msgstr or msgstr == '早':
-                        pictures = morning_path
+                        pic = await get_random_picture(morning_path)
                     elif '晚安' in msgstr:
-                        pictures = night_path
+                        pic = await get_random_picture(night_path)
                     else:
-                        await chat.finish()
-                    pic = await get_random_picture(pictures)
+                        pic = None
                     if pic:
                         await chat.send(MessageSegment.image(pic))
         except Exception as e:
