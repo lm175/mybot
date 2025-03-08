@@ -8,6 +8,8 @@ default_replies = replies['default_replies']
 blocklist_resplies = replies['blocklist_resplies']
 busy_replies = replies['busy_replies']
 error_replies = replies['error_replies']
+summarize_replies = replies['summarize_replies']
+clear_replies = replies['clear_replies']
 
 
 dir_path = Path("data/deepseek/")
@@ -43,6 +45,8 @@ __all__ = [
     "blocklist_resplies",
     "busy_replies",
     "error_replies",
+    "summarize_replies",
+    "clear_replies",
     "character",
     "blocklist",
     "morning_path",

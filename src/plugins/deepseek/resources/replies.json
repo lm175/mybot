@@ -13,5 +13,11 @@
     ],
     "error_replies": [
         "唔，{me}刚刚好像有点走神了呢... {user}同学可以再说一遍吗？"
+    ],
+    "summarize_replies": [
+        "{me}正在总结聊天记录，请稍等一下哦~"
+    ],
+    "clear_replies": [
+        "唔... {me}好像忘记了很多事情呢"
     ]
 }

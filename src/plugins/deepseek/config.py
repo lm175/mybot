@@ -13,7 +13,7 @@ class Config(BaseModel):
     deepseek_chat_model: str = 'deepseek-chat'
     deepseek_summary_model: str = 'deepseek-reasoner'
 
-    deepseek_max_len: int = 20
+    deepseek_max_len: int = 30
     deepseek_max_token: int = 256
 
 

@@ -20,7 +20,8 @@ import asyncio, re
 
 from .models import PrivateMessage, GroupMessage
 from .config import config
-from .utils import self_name
+from .utils import self_name, get_random_reply
+from .const import summarize_replies, clear_replies
 
 
 SILICONFLOW_API_URL = config.siliconflow_api_url
@@ -80,7 +81,7 @@ summarize = on_fullmatch(('总结一下', '/总结一下', '消息省流', '/消
 
 @summarize.handle()
 async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
-    await summarize.send(f'{self_name}正在总结聊天记录，请稍等一下哦~')
+    await summarize.send(await get_random_reply(summarize_replies, str(event.sender.nickname)))
     records = (await session.scalars(
         select(GroupMessage)
         .where(GroupMessage.group_id == event.group_id)
@@ -131,7 +132,7 @@ async def _(event: PrivateMessageEvent, session: async_scoped_session):
             .where(PrivateMessage.user_id == event.user_id)
         )
         await session.commit()
-        await clear.send(f'唔... {self_name}好像忘记了很多事情呢')
+        await clear.send(await get_random_reply(clear_replies, str(event.sender.nickname)))
     except Exception as e:
         logger.error(e)
         await session.rollback()

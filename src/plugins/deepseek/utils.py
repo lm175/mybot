@@ -134,7 +134,7 @@ async def clean_format(text: str) -> tuple[list[Message], str]:
                     pass
                 else:
                     message += f'[{segment}]'
-        result_msg.append(message)
+        result_msg.append(Message(message))
     return result_msg, result_str
 
 
