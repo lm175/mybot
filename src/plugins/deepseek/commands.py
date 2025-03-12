@@ -77,7 +77,7 @@ async def _():
 
 
 
-summarize = on_fullmatch(('总结一下', '/总结一下', '消息省流', '/消息省流'), priority=10, block=True)
+summarize = on_fullmatch(('总结一下', '/总结一下', '省流', '/省流'), priority=10, block=True)
 
 @summarize.handle()
 async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
@@ -122,7 +122,7 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
 
 
 
-clear = on_fullmatch(('clear', '/clear'), rule=is_type(PrivateMessageEvent), priority=10, block=True)
+clear = on_fullmatch(('clear', '/clear', '清除记忆', '/清除记忆'), rule=is_type(PrivateMessageEvent), priority=10, block=True)
 
 @clear.handle()
 async def _(event: PrivateMessageEvent, session: async_scoped_session):

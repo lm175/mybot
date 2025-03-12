@@ -98,9 +98,8 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
     #         else:
     #             del blocked_users.dict_[user_id]
     # 违禁词检测
-    text = str(event.message)
     for s in blocklist:
-        if s in text:
+        if s in event.message.extract_plain_text():
             await chat.send(await get_random_reply(blocklist_resplies, user_name))
             
             # async with block_times.lock:
@@ -170,7 +169,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 .where(GroupMessage.group_id == group_id)
                 .order_by(asc(GroupMessage.timestamp))
             )).all()
-            system_prompt = f'{character}\n下面是一段群聊中的消息，格式为[time]nickname: message，请你以聊天记录作为参考回复最后一位用户的消息，可适当模仿用户的消息格式。'
+            system_prompt = f'{character}\n下面是一段群聊中的消息，格式为[time]nickname: message，请你以聊天记录作为参考，根据自己的设定回复最后一位用户的消息。'
             messages = [{'role': 'system', 'content': system_prompt}]
         else:
             records = (await session.scalars(
@@ -178,7 +177,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 .where(PrivateMessage.user_id == user_id)
                 .order_by(asc(PrivateMessage.timestamp))
             )).all()
-            system_prompt = f'{character}\n下面是你和一位用户的聊天，格式为[time]message，请你根据自己的设定进行回复，可适当模仿用户的消息格式。'
+            system_prompt = f'{character}\n下面是你和一位用户的聊天，格式为[time]message，请你根据自己的设定进行回复。'
             messages = [{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': f'我是{event.sender.nickname}'}]
         for msg in records[-MAX_LEN:]:
             role = 'assistant' if msg.is_bot_msg else 'user'
