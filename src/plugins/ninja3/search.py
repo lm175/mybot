@@ -18,7 +18,7 @@ zyroad_regex = on_regex(
 
 @zyroad_regex.handle()
 async def _():
-    await zyroad_regex.send(MessageSegment.image(ZY_PATH))
+    await zyroad_regex.send(MessageSegment.image(ZY_PATH), reply_message=True)
 
 
 zyroad_fullmatch = on_fullmatch(
@@ -29,7 +29,7 @@ zyroad_fullmatch = on_fullmatch(
 
 @zyroad_fullmatch.handle()
 async def _():
-    await zyroad_fullmatch.send(MessageSegment.image(ZY_PATH))
+    await zyroad_fullmatch.send(MessageSegment.image(ZY_PATH), reply_message=True)
 
 
 

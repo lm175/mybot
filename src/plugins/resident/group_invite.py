@@ -20,35 +20,35 @@ from nonebot.adapters.onebot.v11.helpers import extract_numbers
 from nonebot.permission import SUPERUSER
 from nonebot.log import logger
 
-group_invite = on_request()
+# group_invite = on_request()
 
-@group_invite.handle()
-async def _(bot: Bot, event: GroupRequestEvent):
-    group_id = event.group_id
-    user_id = event.user_id
-    flag = event.flag
+# @group_invite.handle()
+# async def _(bot: Bot, event: GroupRequestEvent):
+#     group_id = event.group_id
+#     user_id = event.user_id
+#     flag = event.flag
 
-    if group_id not in white_list:
-        await bot.send_private_msg(
-            user_id=user_id,
-            message=f'是个陌生群聊呢，还是先跟管理员{super_user}说一下再邀请我吧(｡･ω･｡)'
-        )
-    else:
-        try:
-            await bot.set_group_add_request(flag=flag, sub_type='invite', approve=True)
-            await bot.send_private_msg(
-                user_id=user_id,
-                message='收到，已经进群啦'
-            )
-            logger.info(f"Auto-approved group invitation to group {group_id} from user {user_id}.")
-            return
+#     if group_id not in white_list:
+#         await bot.send_private_msg(
+#             user_id=user_id,
+#             message=f'是个陌生群聊呢，还是先跟管理员{super_user}说一下再邀请我吧(｡･ω･｡)'
+#         )
+#     else:
+#         try:
+#             await bot.set_group_add_request(flag=flag, sub_type='invite', approve=True)
+#             await bot.send_private_msg(
+#                 user_id=user_id,
+#                 message='收到，已经进群啦'
+#             )
+#             logger.info(f"Auto-approved group invitation to group {group_id} from user {user_id}.")
+#             return
             
-        except Exception as e:
-            await bot.send_private_msg(
-                user_id=user_id,
-                message='好像出了点小差错呢，等会儿再试一下吧'
-            )
-            logger.error(f"Failed to auto-approve group invitation: {e}")
+#         except Exception as e:
+#             await bot.send_private_msg(
+#                 user_id=user_id,
+#                 message='好像出了点小差错呢，等会儿再试一下吧'
+#             )
+#             logger.error(f"Failed to auto-approve group invitation: {e}")
 
 
 async def invite_checker(event: PrivateMessageEvent) -> bool:
@@ -57,11 +57,10 @@ async def invite_checker(event: PrivateMessageEvent) -> bool:
         return True
     return False
 
-# 阻断群邀请卡片，一定程度防止糖人试图让ai自己进群
+
 blocker = on_message(rule=invite_checker, priority=5, block=True)
 @blocker.handle()
 async def _():
-    # await blocker.send(f"邀请加群请联系管理员：{super_user}")
     pass
 
 
