@@ -233,6 +233,8 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 if reply_text:
                     result_messages, result_str = await clean_format(reply_text)
                     reply_message_id = 0
+                    if not result_messages:
+                        continue
                     for msg in result_messages:
                         res = await chat.send(msg)
                         reply_message_id = res['message_id']

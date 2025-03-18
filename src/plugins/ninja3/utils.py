@@ -32,11 +32,15 @@ async def redeem_code(uid: int, code: str) -> RedeemCodeResponse:
         res =  await asyncio.to_thread(ninja3_redeem_code, uid, code)
     return RedeemCodeResponse(**res.json())
 
-async def code_checker(code: str):
-    res = await redeem_code(634431781, code)
-    if res.code != 0 and res.code != 2152:
-        return False
-    return True
+
+async def code_checker(code: str) -> bool:
+    my_uids = [634431781, 100400416931, 200701467414]
+    for uid in my_uids:
+        res = await redeem_code(uid, code)
+        if res.code == 0 or res.code == 2152:
+            return True
+
+    return False
 
 
 async def query_uid(uid: int) -> str | None:
