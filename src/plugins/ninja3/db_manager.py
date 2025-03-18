@@ -2,6 +2,7 @@ import aiosqlite
 from aiosqlite import Row
 
 from pathlib import Path
+from datetime import date
 import asyncio
 
 
@@ -34,6 +35,14 @@ async def create_table():
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
                 need_remind INTEGER DEFAULT 1
+            )
+        ''')
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS giftcode_servers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                code TEXT,
+                server_id INTEGER DEFAULT 0,
+                FOREIGN KEY (code) REFERENCES giftcodes(code) ON DELETE CASCADE
             )
         ''')
         await db.commit()
@@ -89,3 +98,17 @@ class DatabaseManager:
                 for row in rows:
                     result.append(row[0])
         return result
+    
+    @staticmethod
+    async def update_giftcode(code: str, available_servers: list[int]) -> None:
+        async with aiosqlite.connect(db_path) as db:
+            await db.execute(
+                "INSERT INTO giftcodes (code, time, available) VALUES (?, ?, ?)",
+                (code, date.today(), True)
+            )
+            for server_id in available_servers:
+                await db.execute(
+                    "INSERT INTO giftcode_servers (code, server_id) VALUES (?, ?)",
+                    (code, server_id)
+                )
+            await db.commit()

@@ -12,7 +12,7 @@ from nonebot.adapters.onebot.v11.helpers import (
 )
 
 from .db_manager import DatabaseManager as db
-from .utils import query_uid, redeem_code
+from .utils import query_uid, redeem_code, get_server_id
 
 
 
@@ -83,10 +83,13 @@ async def _(event: MessageEvent, state: T_State):
             uid_str += f"\n{u}"
         await uid_add.send(f"添加成功，当前已绑定uid:{uid_str}\n正在检查可用的兑换码··")
 
-        codes = await db.query_all(
-            "SELECT code FROM giftcodes WHERE available = ?",
-            (True,)
-        )
+        server_id = get_server_id(game_id)
+        codes = await db.query_all('''
+            SELECT DISTINCT gc.code 
+            FROM giftcodes gc
+            JOIN giftcode_servers gcs ON gc.code = gcs.code
+            WHERE gc.available = ? AND gcs.server_id = ?;
+        ''', (True, server_id))
         if codes:
             reply_msg = ''
             for c in codes:
@@ -98,7 +101,7 @@ async def _(event: MessageEvent, state: T_State):
                     )
                 else:
                     reply_msg += f'\n{c[0]}: {res.msg}'
-            await uid_add.send(reply_msg, at_sender=True)
+            await uid_add.send(reply_msg.strip(), at_sender=True)
 
     else:
         await uid_add.send("已取消")

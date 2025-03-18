@@ -17,12 +17,11 @@ class RedeemCodeResponse:
             self.msg = '领取成功，请登录游戏领取奖励邮件'
 
 
-def is_this_week(date: datetime.date) -> bool:
-    today = datetime.date.today()
-    start_of_week = today - datetime.timedelta(days=today.weekday())
-    end_of_week = start_of_week + datetime.timedelta(days=6)
-
-    return start_of_week <= date <= end_of_week
+def get_server_id(game_id: int) -> int:
+    id_str = str(game_id)
+    if len(id_str) == 9:
+        id_str = '000' + id_str
+    return int(id_str[0])
 
 
 async def redeem_code(uid: int, code: str) -> RedeemCodeResponse:
@@ -33,14 +32,15 @@ async def redeem_code(uid: int, code: str) -> RedeemCodeResponse:
     return RedeemCodeResponse(**res.json())
 
 
-async def code_checker(code: str) -> bool:
+async def code_checker(code: str) -> tuple[list[int], bool]:
     my_uids = [634431781, 100400416931, 200701467414]
-    for uid in my_uids:
-        res = await redeem_code(uid, code)
-        if res.code == 0 or res.code == 2152:
-            return True
-
-    return False
+    available_servers: list[int] = []
+    for i in range(len(my_uids)):
+        resp = await redeem_code(my_uids[i], code)
+        if resp.code == 0 or resp.code == 2152:
+            available_servers.append(i)
+    is_universal = len(available_servers) == len(my_uids)
+    return available_servers, is_universal
 
 
 async def query_uid(uid: int) -> str | None:
