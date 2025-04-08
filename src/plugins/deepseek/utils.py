@@ -103,7 +103,7 @@ async def clean_format(text: str) -> tuple[list[Message], str]:
         user_name = re.search(r'^(.*?)[：:]', part)
         if user_name:
             if user_name.group(1) == self_name:
-                part = part[user_name.end():].lstrip()
+                part = part[user_name.end():].strip()
             else:
                 continue
         result_str += part

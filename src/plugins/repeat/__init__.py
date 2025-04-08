@@ -13,7 +13,7 @@ __plugin_meta__ = PluginMetadata(
 last_messages = {}
 last_repeat_messages = {}
 
-follow_repeat = on_message(priority=100)
+follow_repeat = on_message(priority=1, block=False)
 
 @follow_repeat.handle()
 async def handle_first_receive(event: GroupMessageEvent):
