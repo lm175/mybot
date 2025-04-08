@@ -22,8 +22,6 @@ wwcmd = on_command(
 
 @wwcmd.handle()
 async def _(bot: Bot, event: MessageEvent, args: Message = CommandArg()):
-    if not event.is_tome():
-        return
     if cmd := args.extract_plain_text():
         event.message = event.original_message = Message(f'ww{cmd}')
         await handle_message(bot, event)

@@ -21,8 +21,8 @@ srcmd = on_command(
 
 @srcmd.handle()
 async def _(bot: Bot, event: MessageEvent, args: Message = CommandArg()):
-    if not event.is_tome():
-        return
     if cmd := args.extract_plain_text():
+        if '面板' in cmd:
+            cmd = f"查询{cmd.replace('面板', '')}"
         event.message = event.original_message= Message(f'sr{cmd}')
         await handle_message(bot, event)
