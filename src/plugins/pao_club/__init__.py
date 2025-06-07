@@ -20,11 +20,7 @@ __plugin_meta__ = PluginMetadata(
 
 
 from nonebot import on_fullmatch, on_command, get_driver
-from nonebot.adapters.onebot.v11 import (
-    Bot,
-    MessageEvent,
-    PrivateMessageEvent
-)
+from nonebot.adapters.onebot.v11 import Bot, MessageEvent
 from nonebot.log import logger
 
 from pathlib import Path
@@ -65,8 +61,6 @@ upload = on_command("跑跑上传题库",  priority=10, block=True)
 
 @upload.handle()
 async def _(event: MessageEvent):
-    if not isinstance(event, PrivateMessageEvent):
-        await upload.finish("暂不支持群聊上传，请发送私聊")
     await upload.send("请发送文件，格式参考如下")
     await upload.send(get_node_message(
         user_id=event.self_id,
@@ -74,7 +68,7 @@ async def _(event: MessageEvent):
     ))
 
 @upload.receive()
-async def _(bot: Bot, event: PrivateMessageEvent):
+async def _(bot: Bot, event: MessageEvent):
     file_id: str = ""
     for segment in event.message:
         if segment.type == "file":
