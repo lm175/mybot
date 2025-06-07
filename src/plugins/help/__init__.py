@@ -27,7 +27,7 @@ __plugin_meta__ = PluginMetadata(
 
 UserId = Annotated[str, SessionId(SessionIdType.GROUP, include_bot_type=False)]
 
-help = on_command("help", aliases={"帮助", "功能"}, block=True)
+help = on_command("help", aliases={"帮助", "功能", "菜单"}, block=True)
 
 
 @help.handle()

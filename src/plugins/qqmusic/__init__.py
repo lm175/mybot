@@ -6,7 +6,7 @@ from nonebot.adapters.onebot.v11 import Message, MessageSegment, MessageEvent
 from nonebot.adapters.onebot.v11.helpers import is_cancellation, extract_numbers
 
 from httpx import AsyncClient
-import json, asyncio
+import asyncio
 
 from .draw import creat_table, draw_search_res
 
@@ -26,50 +26,9 @@ __plugin_meta__ = PluginMetadata(
     )
 )
 
-class Song:
-    def __init__(
-        self,
-        audio,
-        name,
-        singer,
-        jump_url="https://music.163.com/",
-        format="163",
-        image=""
-    ):
-        self.jump_url = jump_url
-        self.audio = audio
-        self.format = format
-        self.name = name
-        self.singer = singer
-        self.image = image
-
-
-    async def card(self) -> MessageSegment:
-        """
-        音乐卡片签名，返回MessageSegment类对象
-        """
-        url = "https://oiapi.net/API/QQMusicJSONArk"
-        request_data = {
-            "url": self.audio,
-            "song": self.name,
-            "singer": self.singer,
-            "cover": self.image,
-            "jump": self.jump_url,
-            "format": self.format
-        }
-        try:
-            async with AsyncClient() as client:
-                response = await client.get(url=url, params=request_data)
-            data = json.loads(response.text)
-            json_data = json.dumps(data["data"])
-            return MessageSegment.json(json_data)
-        except Exception as e:
-            logger.error(e)
-            return MessageSegment.record(self.audio)
-
 
 async def get_song_list(name) -> list[dict[str, str]]:
-    url = "https://www.hhlqilongzhu.cn/api/dg_qqmusic_SQ.php"
+    url = "https://api.dragonlongzhu.cn/api/dg_QQmusicflac.php"
     params = {
         "msg": name,
         "type": "json"
@@ -77,13 +36,13 @@ async def get_song_list(name) -> list[dict[str, str]]:
     try:
         async with AsyncClient() as client:
             res = await client.get(url=url, params=params)
+        return res.json()["data"]
     except Exception as e:
         logger.error(e)
         return []
-    return json.loads(res.text)["data"]
 
 async def get_song(name, n=None) -> dict:
-    url = "https://www.hhlqilongzhu.cn/api/dg_qqmusic_SQ.php"
+    url = "https://api.dragonlongzhu.cn/api/dg_QQmusicflac.php"
     params = {
         "msg": name,
         "n": n,
@@ -92,10 +51,10 @@ async def get_song(name, n=None) -> dict:
     try:
         async with AsyncClient() as client:
             res = await client.get(url=url, params=params)
+        return res.json()["data"]
     except Exception as e:
         logger.error(e)
         return {}
-    return json.loads(res.text)["data"]
 
 
 cache_dict = {}
@@ -142,15 +101,13 @@ async def send_music(event: MessageEvent, state: T_State, name: str = ArgPlainTe
     n = int(n[0])
 
     data = await get_song(name, n)
-    song = Song(
+    await qqMusic.send(MessageSegment.music_custom(
+        url=data['link'],
         audio=data['music_url'],
-        name=data['song_name'],
-        singer=data['song_singer'],
-        jump_url=data['link'],
-        format="qq",
-        image=data['cover']
-    )
-    await qqMusic.send(await song.card())
+        title=data['song_name'],
+        content=data["song_singer"],
+        img_url=data['cover']
+    ))
     user_id = str(event.user_id)
     cache_dict[user_id] = data
     asyncio.create_task(clean_song_cache(user_id))
@@ -159,12 +116,12 @@ async def send_music(event: MessageEvent, state: T_State, name: str = ArgPlainTe
 
 qqRecord = on_command("QQ语音", aliases={"qq语音"}, priority=20, block=True)
 qqLink = on_command("QQ直链", aliases={"qq直链"}, priority=20, block=True)
-qqLyric = on_command("QQ歌词", aliases={"qq歌词"}, priority=20, block=True)
+# qqLyric = on_command("QQ歌词", aliases={"qq歌词"}, priority=20, block=True)
 
 
 @qqRecord.handle()
 @qqLink.handle()
-@qqLyric.handle()
+# @qqLyric.handle()
 async def handle_cache(event: MessageEvent):
     user_id = str(event.user_id)
     if user_id not in cache_dict:

@@ -20,7 +20,9 @@ async def handle_first_receive(event: GroupMessageEvent):
     group_id = event.group_id
     message = event.get_message()
 
-    text = str(message)
+    text = message.extract_plain_text()
+    if not text:
+        return
     for k in ['人品', '原神']:
         if k in text:
             return

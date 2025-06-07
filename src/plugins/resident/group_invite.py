@@ -6,49 +6,59 @@ data_file = store.get_plugin_data_file("whitelist.json")
 white_list: list[int] = []
 
 
-import nonebot
-self_name = list(nonebot.get_driver().config.nickname)
-self_name = self_name[0] if self_name else "桃子"
-superusers = list(nonebot.get_driver().config.superusers)
-super_user = superusers[0] if superusers else ""
-
-
-from nonebot import on_command, on_request, on_message
-from nonebot.adapters.onebot.v11 import Bot, Message, GroupRequestEvent, PrivateMessageEvent
+from nonebot import on_command, on_request, on_message, on_notice
+from nonebot.adapters.onebot.v11 import (
+    Bot,
+    Message,
+    MessageSegment,
+    GroupRequestEvent,
+    PrivateMessageEvent,
+    GroupIncreaseNoticeEvent
+)
 from nonebot.params import CommandArg
 from nonebot.adapters.onebot.v11.helpers import extract_numbers
 from nonebot.permission import SUPERUSER
 from nonebot.log import logger
 
-# group_invite = on_request()
+group_invite = on_request()
 
-# @group_invite.handle()
-# async def _(bot: Bot, event: GroupRequestEvent):
-#     group_id = event.group_id
-#     user_id = event.user_id
-#     flag = event.flag
+@group_invite.handle()
+async def _(bot: Bot, event: GroupRequestEvent):
+    group_id = event.group_id
+    user_id = event.user_id
+    flag = event.flag
 
-#     if group_id not in white_list:
-#         await bot.send_private_msg(
-#             user_id=user_id,
-#             message=f'是个陌生群聊呢，还是先跟管理员{super_user}说一下再邀请我吧(｡･ω･｡)'
-#         )
-#     else:
-#         try:
-#             await bot.set_group_add_request(flag=flag, sub_type='invite', approve=True)
-#             await bot.send_private_msg(
-#                 user_id=user_id,
-#                 message='收到，已经进群啦'
-#             )
-#             logger.info(f"Auto-approved group invitation to group {group_id} from user {user_id}.")
-#             return
+    if group_id not in white_list:
+        # await bot.send_private_msg(
+        #     user_id=user_id,
+        #     message=f'是个陌生群聊呢，还是先跟管理员{super_user}说一下再邀请我吧(｡･ω･｡)'
+        # )
+        pass
+    else:
+        try:
+            await bot.set_group_add_request(flag=flag, sub_type='invite', approve=True)
+            logger.info(f"Auto-approved group invitation to group {group_id} from user {user_id}.")
             
-#         except Exception as e:
-#             await bot.send_private_msg(
-#                 user_id=user_id,
-#                 message='好像出了点小差错呢，等会儿再试一下吧'
-#             )
-#             logger.error(f"Failed to auto-approve group invitation: {e}")
+        except Exception as e:
+            logger.error(f"Failed to auto-approve group invitation: {e}")
+
+
+async def INCchecker(event: GroupIncreaseNoticeEvent) -> bool:
+    return True
+
+inc = on_notice(rule=INCchecker)
+
+@inc.handle()
+async def _(bot: Bot, event: GroupIncreaseNoticeEvent):
+    user_id = event.user_id
+    if user_id == event.self_id and event.group_id not in white_list:
+        try:
+            await bot.set_group_leave(
+                group_id=event.group_id
+            )
+        except Exception as e:
+            logger.error(e)
+
 
 
 async def invite_checker(event: PrivateMessageEvent) -> bool:
