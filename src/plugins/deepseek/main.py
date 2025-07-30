@@ -234,11 +234,13 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                         response_json = json.loads(str(response.choices[0].message.content))
                         reply_text = response_json['text']
                         reply_face = response_json['face']
-                    except:
+                    except Exception as e:
+                        logger.error(f"Error parsing response: {e}")
                         reply_text = None
                         reply_face = None
                     logger.info(reply_text)
-                except:
+                except Exception as e:
+                    logger.error(f"Error in API request: {e}")
                     reply_text = None
 
                 # 回复
@@ -255,6 +257,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                     for msg in result_messages:
                         res = await chat.send(msg)
                         reply_message_id = res['message_id']
+                        await asyncio.sleep(1)
                     
                     # 保存bot回复的内容
                     if group_id:
