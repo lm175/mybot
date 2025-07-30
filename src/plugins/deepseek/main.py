@@ -187,7 +187,10 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
             messages = [{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': f'我是{event.sender.nickname}'}]
         for msg in records[-MAX_LEN:]:
             role = 'assistant' if msg.is_bot_msg else 'user'
-            content = f'[{msg.timestamp}]{msg.nickname}: {msg.content}' if group_id else f'[{msg.timestamp}]{msg.content}'
+            if role == 'assistant':
+                content = msg.content
+            else:
+                content = f'[{msg.timestamp}]{msg.nickname}: {msg.content}' if group_id else f'[{msg.timestamp}]{msg.content}'
             messages.append({'role': role, 'content': content})
 
         # 添加本次对话
