@@ -89,53 +89,50 @@ async def get_str_message(bot: Bot, event: MessageEvent) -> str:
 
 
 
-async def clean_format(text: str) -> tuple[list[Message], str]:
+async def clean_format(text: str) -> str:
     """将模型返回的文本处理成Message列表"""
     # 删除开头可能出现时间戳
     pattern = r'\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]'
     parts: list[str] = re.split(pattern, text)
     if len(parts) >= 2:
         parts = parts[1:]
-    result_msg: list[Message] = []
-    result_str: str = ''
-    for part in parts:
-        # 删除可能出现的名字冒号
-        user_name = re.search(r'^(.*?)[：:]', part)
-        if user_name:
-            if user_name.group(1) == self_name:
-                part = part[user_name.end():].strip()
-            else:
-                continue
-        result_str += part
+    return parts[0]
 
-        # 消息段拼接
-        message = Message()
-        segments: list[str] = re.split(r'\[(.*?)\]', part)
-        for i in range(len(segments)):
-            segment = segments[i]
-            if not segment:
-                continue
-            if i % 2 == 0:  # 文本
-                message += segment
-            else:
-                if segment.startswith('/'): # 表情
-                    face_name = segment[1:]
-                    if face_name in str_to_face:
-                        message += MessageSegment.face(int(str_to_face[face_name]))
-                    else:
-                        message += f'[{segment}]'
-                elif segment == '动画表情':
-                    image = await get_random_picture(cute_cat_path)
-                    if image:
-                        message += MessageSegment.image(image)
-                    else:
-                        message += '[动画表情]'
-                elif segment.startswith('回复'):
-                    pass
+
+async def clean_format_message(text: str) -> Message:
+    # 删除可能出现的名字冒号
+    user_name = re.search(r'^(.*?)[：:]', text)
+    if user_name and user_name.group(1) == self_name:
+        text = text[user_name.end():].strip()
+
+    # 消息段拼接
+    message = Message()
+    segments: list[str] = re.split(r'\[(.*?)\]', text)
+    for i in range(len(segments)):
+        segment = segments[i]
+        if not segment:
+            continue
+        if i % 2 == 0:  # 文本
+            message += segment
+        else:
+            if segment.startswith('/'): # 表情
+                face_name = segment[1:]
+                if face_name in str_to_face:
+                    message += MessageSegment.face(int(str_to_face[face_name]))
                 else:
                     message += f'[{segment}]'
-        result_msg.append(Message(message))
-    return result_msg, result_str
+            elif segment == '动画表情':
+                image = await get_random_picture(cute_cat_path)
+                if image:
+                    message += MessageSegment.image(image)
+                else:
+                    message += '[动画表情]'
+            elif segment.startswith('回复'):
+                pass
+            else:
+                message += f'[{segment}]'
+                
+    return message
 
 
 async def get_random_picture(path: Path) -> Path | None:
@@ -152,3 +149,7 @@ async def get_random_reply(replies: list[str], user_name: str) -> str:
     result = random.choice(replies)
     result = result.replace('{me}', self_name).replace('{user}', user_name)
     return result
+
+
+
+

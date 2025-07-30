@@ -29,7 +29,8 @@ from .utils import (
     get_str_message,
     get_random_picture,
     get_random_reply,
-    clean_format
+    clean_format,
+    clean_format_message
 )
 
 SILICONFLOW_API_URL = config.siliconflow_api_url
@@ -231,7 +232,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                     response = await asyncio.to_thread(send_request, messages)
                     logger.info(f"response: {response}")
                     try:
-                        response_json = json.loads(str(response.choices[0].message.content))
+                        response_json = json.loads(await clean_format(str(response.choices[0].message.content)))
                         reply_text = response_json['text']
                         reply_face = response_json['face']
                     except Exception as e:
@@ -248,9 +249,9 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                     result_messages = []
                     response_json['text'] = []
                     for text in reply_text:
-                        result_messages_tmp, result_str_tmp = await clean_format(text)
-                        result_messages.extend(result_messages_tmp)
-                        response_json['text'].append(result_str_tmp)
+                        result_messages_tmp = await clean_format_message(text)
+                        result_messages.append(result_messages_tmp)
+                        response_json['text'].append(text)
                     reply_message_id = 0
                     if not result_messages:
                         continue
