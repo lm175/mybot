@@ -16,7 +16,7 @@ from typing import Union, Optional
 import json, random, re
 
 from .models import GroupMessage
-from .const import images_path
+from .const import cute_cat_path
 
 
 bot_names = list(get_driver().config.nickname)
@@ -125,7 +125,7 @@ async def clean_format(text: str) -> tuple[list[Message], str]:
                     else:
                         message += f'[{segment}]'
                 elif segment == '动画表情':
-                    image = await get_random_picture(images_path)
+                    image = await get_random_picture(cute_cat_path)
                     if image:
                         message += MessageSegment.image(image)
                     else:

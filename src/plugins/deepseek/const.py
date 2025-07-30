@@ -35,9 +35,12 @@ night_path = dir_path / 'night'
 if not night_path.exists():
     night_path.mkdir(parents=True, exist_ok=True)
 
-images_path = dir_path / 'images'
-if not images_path.exists():
-    images_path.mkdir(parents=True, exist_ok=True)
+cute_cat_path = dir_path / 'cats'
+if not cute_cat_path.exists():
+    cute_cat_path.mkdir(parents=True, exist_ok=True)
+capoo_path = dir_path / 'capoo'
+if not capoo_path.exists():
+    capoo_path.mkdir(parents=True, exist_ok=True)
 
 
 __all__ = [
@@ -51,5 +54,7 @@ __all__ = [
     "blocklist",
     "morning_path",
     "night_path",
-    "images_path",
+    "cute_cat_path",
+    "capoo_path",
 ]
+

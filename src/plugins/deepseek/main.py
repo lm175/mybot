@@ -14,9 +14,11 @@ require("nonebot_plugin_orm")
 from nonebot_plugin_orm import async_scoped_session
 from sqlalchemy import select, delete, asc
 from openai import OpenAI
+from httpx import AsyncClient
 
 from datetime import datetime, timedelta
 import asyncio, random, json
+from io import BytesIO
 
 
 from .models import PrivateMessage, GroupMessage
@@ -291,13 +293,15 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                     # if pic:
                     #     await chat.send(MessageSegment.image(pic))
                 if reply_face:
+                    image = None
                     if reply_face == '早上好':
                         image = await get_random_picture(morning_path)
                     elif reply_face == '晚安':
                         image = await get_random_picture(night_path)
-                    else:
-                        image = await get_random_picture(images_path)
-
+                    elif reply_face == '可爱猫猫':
+                        image = await get_random_picture(cute_cat_path)
+                    elif reply_face == '猫猫虫咖波':
+                        image = await get_random_picture(capoo_path)
                     if image:
                         await chat.send(MessageSegment.image(image))
 
@@ -336,3 +340,4 @@ async def _(bot: Bot, event: GroupMessageEvent, session: async_scoped_session):
     except Exception as e:
         logger.error(e)
         await session.rollback()
+
