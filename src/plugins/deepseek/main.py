@@ -229,6 +229,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 logger.info(messages)
                 try:
                     response = await asyncio.to_thread(send_request, messages)
+                    logger.info(f"response: {response}")
                     try:
                         response_json = json.loads(str(response.choices[0].message.content))
                         reply_text = response_json['text']
