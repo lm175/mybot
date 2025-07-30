@@ -16,7 +16,7 @@ from sqlalchemy import select, delete, asc
 from openai import OpenAI
 
 from datetime import datetime, timedelta
-import asyncio, random
+import asyncio, random, json
 
 
 from .models import PrivateMessage, GroupMessage
@@ -49,6 +49,7 @@ def send_request(messages: list):
             model=SILICONFLOW_CHAT_MODEL,
             messages=messages,
             stream=False,
+            response_format={"type": "json_object"},
             max_tokens=MAX_TOKEN
         )
     except:
@@ -56,6 +57,7 @@ def send_request(messages: list):
             model=DEEPSEEK_CHAT_MODEL,
             messages=messages,
             stream=False,
+            response_format={"type": "json_object"},
             max_tokens=MAX_TOKEN
         )
     finally:
@@ -161,6 +163,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
         finally:
             await chat.reject()
 
+    system_prompt = f'{character}\n 回答需为 json 格式，包含 text（文本）和 face（动画表情，可选：["可爱猫猫","猫猫虫咖波","早上好","晚安"]）。text为列表字符串，长度控制在2以内。face字符串，可空。（强调：表情适度使用，不要频繁发送！！！）\n'
     try:
         # 获取历史记录
         if group_id:
@@ -169,7 +172,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 .where(GroupMessage.group_id == group_id)
                 .order_by(asc(GroupMessage.timestamp))
             )).all()
-            system_prompt = f'{character}\n下面是一段群聊中的消息，格式为[time]nickname: message，请你以聊天记录作为参考，根据自己的设定回复最后一位用户的消息。'
+            system_prompt += '下面是一段群聊中的消息，格式为[time]nickname: message，请你以聊天记录作为参考，根据自己的设定回复最后一位用户的消息。'
             messages = [{'role': 'system', 'content': system_prompt}]
         else:
             records = (await session.scalars(
@@ -177,7 +180,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 .where(PrivateMessage.user_id == user_id)
                 .order_by(asc(PrivateMessage.timestamp))
             )).all()
-            system_prompt = f'{character}\n下面是你和一位用户的聊天，格式为[time]message，请你根据自己的设定进行回复。'
+            system_prompt += '下面是你和一位用户的聊天，格式为[time]message，请你根据自己的设定进行回复。'
             messages = [{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': f'我是{event.sender.nickname}'}]
         for msg in records[-MAX_LEN:]:
             role = 'assistant' if msg.is_bot_msg else 'user'
@@ -224,21 +227,32 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                 logger.info(messages)
                 try:
                     response = await asyncio.to_thread(send_request, messages)
-                    reply_text = response.choices[0].message.content
+                    try:
+                        response_json = json.loads(str(response.choices[0].message.content))
+                        reply_text = response_json['text']
+                        reply_face = response_json['face']
+                    except:
+                        reply_text = None
+                        reply_face = None
                     logger.info(reply_text)
                 except:
                     reply_text = None
 
                 # 回复
-                if reply_text:
-                    result_messages, result_str = await clean_format(reply_text)
+                if reply_text and response_json:
+                    result_messages = []
+                    response_json['text'] = []
+                    for text in reply_text:
+                        result_messages_tmp, result_str_tmp = await clean_format(text)
+                        result_messages.extend(result_messages_tmp)
+                        response_json['text'].append(result_str_tmp)
                     reply_message_id = 0
                     if not result_messages:
                         continue
                     for msg in result_messages:
                         res = await chat.send(msg)
                         reply_message_id = res['message_id']
-
+                    
                     # 保存bot回复的内容
                     if group_id:
                         session.add(GroupMessage(
@@ -247,7 +261,7 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                             group_id=group_id,
                             nickname=self_name,
                             is_bot_msg=True,
-                            content=result_str
+                            content=json.dumps(response_json, ensure_ascii=False)
                         ))
                         messages = None
                     else:
@@ -256,26 +270,37 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
                             user_id=user_id,
                             nickname=self_name,
                             is_bot_msg=True,
-                            content=result_str
+                            content=json.dumps(response_json, ensure_ascii=False)
                         ))
                         # 获取暂存的消息
                         async with pending_messages.lock:
                             if messages := pending_messages.dict_.get(user_id):
                                 del pending_messages.dict_[user_id]
                                 formatted_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                messages.insert(-1, {'role': 'assistant', 'content': f'[{formatted_now}]{result_str}'})
+                                messages.insert(-1, {'role': 'assistant', 'content': json.dumps(response_json, ensure_ascii=False)})
                     await session.flush()
 
-                    # 简单配图
-                    msgstr = event.message.extract_plain_text()
-                    if '早上好' in msgstr or '早安' in msgstr or msgstr == '早':
-                        pic = await get_random_picture(morning_path)
-                    elif '晚安' in msgstr:
-                        pic = await get_random_picture(night_path)
+                    # # 简单配图
+                    # msgstr = event.message.extract_plain_text()
+                    # if '早上好' in msgstr or '早安' in msgstr or msgstr == '早':
+                    #     pic = await get_random_picture(morning_path)
+                    # elif '晚安' in msgstr:
+                    #     pic = await get_random_picture(night_path)
+                    # else:
+                    #     pic = None
+                    # if pic:
+                    #     await chat.send(MessageSegment.image(pic))
+                if reply_face:
+                    if reply_face == '早上好':
+                        image = await get_random_picture(morning_path)
+                    elif reply_face == '晚安':
+                        image = await get_random_picture(night_path)
                     else:
-                        pic = None
-                    if pic:
-                        await chat.send(MessageSegment.image(pic))
+                        image = await get_random_picture(images_path)
+
+                    if image:
+                        await chat.send(MessageSegment.image(image))
+
         except Exception as e:
             logger.error(e)
         finally:
