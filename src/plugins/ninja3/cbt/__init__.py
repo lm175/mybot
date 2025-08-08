@@ -123,22 +123,18 @@ async def handle_caculate(event: MessageEvent):
     days, weeks = await get_date(end_date)
     current_resources = CurrentResources(*current_list)
     expected_resources = ExpectedResources(*(await caculator(current_list, days, weeks)))
-    max_element, total_element_fragment = await get_total_element_fragment(current_list)
+    max_element, max_element_value, converted_element_fragment = await get_total_element_fragment(current_list)
     element_icon = {"风": "wind", "雷": "thunder", "水": "water", "火": "fire"}
-    print(total_element_fragment)
     total = Total(
-        universal_fragment=current_list[13] + expected_resources.universal_fragment, # 通用残卷
-        element_fragment=total_element_fragment + expected_resources.element_fragment, # 属性残卷
+        universal_fragment=current_list[13] + expected_resources.universal_fragment + converted_element_fragment, # 通用残卷
+        element_fragment=expected_resources.element_fragment + max_element_value, # 属性残卷
         random_element_fragment=expected_resources.random_element_fragment, # 随机属性残卷
         element_icon=element_icon.get(max_element, "wind"),
         element_name=max_element
     )
     # 计算仅保留通用残卷的数量
     total_universal_fragment = total.universal_fragment
-    total_universal_fragment += expected_resources.element_fragment // 2 + expected_resources.random_element_fragment // 2
-    for i in range(9, 13):
-        total_universal_fragment += current_list[i] // 2
-    
+    total_universal_fragment += total.element_fragment // 2 + total.random_element_fragment // 2
 
     templates = {
         "days": days,

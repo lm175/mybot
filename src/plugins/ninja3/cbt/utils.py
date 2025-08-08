@@ -60,7 +60,7 @@ async def caculator(current: list[int], days: int, weeks: int) -> list[int]:
     return result
 
 
-async def get_total_element_fragment(current: list[int]) -> tuple[str, int]:
+async def get_total_element_fragment(current: list[int]) -> tuple[str, int, int]:
     element_map = {
         "风": current[9],
         "雷": current[10],
@@ -73,8 +73,8 @@ async def get_total_element_fragment(current: list[int]) -> tuple[str, int]:
         if v > max_value:
             max_value = v
             max_element = k
-    total = max_value
+    total = 0
     for k, v in element_map.items():
         if k != max_element:
             total += v // 2
-    return max_element, total
+    return max_element, max_value, total
