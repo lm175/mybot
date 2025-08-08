@@ -1,6 +1,7 @@
 from .search import *
 from .dhm import *
 from .uid_bind import *
+from .cbt import *
 
 from nonebot.plugin import PluginMetadata
 
