@@ -9,7 +9,7 @@ from httpx import AsyncClient
 import asyncio
 
 from .draw import creat_table, draw_search_res
-
+from .config import config
 
 from nonebot.plugin import PluginMetadata
 
@@ -27,11 +27,15 @@ __plugin_meta__ = PluginMetadata(
 )
 
 
+url = "https://sdkapi.hhlqilongzhu.cn/api/QQmusic/"
+
+
 async def get_song_list(name) -> list[dict[str, str]]:
-    url = "https://api.dragonlongzhu.cn/api/dg_QQmusicflac.php"
+    # url = "https://api.dragonlongzhu.cn/api/dg_QQmusicflac.php"
     params = {
         "msg": name,
-        "type": "json"
+        "type": "json",
+        "key": config.qqmusic_api_key
     }
     try:
         async with AsyncClient() as client:
@@ -42,11 +46,11 @@ async def get_song_list(name) -> list[dict[str, str]]:
         return []
 
 async def get_song(name, n=None) -> dict:
-    url = "https://api.dragonlongzhu.cn/api/dg_QQmusicflac.php"
     params = {
         "msg": name,
         "n": n,
-        "type": "json"
+        "type": "json",
+        "key": config.qqmusic_api_key
     }
     try:
         async with AsyncClient() as client:
