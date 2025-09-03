@@ -5,8 +5,8 @@ import bbcode
 from jinja2 import Template
 from nonebot import logger
 from nonebot_plugin_htmlrender import get_new_page
-from pil_utils.fonts import Font
-from pil_utils.types import ColorType, HAlignType
+from ...pil_utils.fonts import Font
+from ...pil_utils.types import ColorType, HAlignType
 
 from ..config import config
 from ..const import RES_DIR

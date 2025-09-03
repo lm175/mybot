@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from math import ceil
 from typing import List, NamedTuple, Optional
 
-from pil_utils.types import HAlignType
+from ...pil_utils.types import HAlignType
 
 from ..config import config
 

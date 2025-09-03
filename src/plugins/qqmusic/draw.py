@@ -1,5 +1,5 @@
-from pil_utils import BuildImage, Text2Image
-from pil_utils.types import HAlignType
+from .pil_utils import BuildImage, Text2Image
+from .pil_utils.types import HAlignType
 from dataclasses import dataclass
 from typing import List, Dict, NamedTuple, Optional
 

@@ -1,7 +1,7 @@
 from typing import List, Sequence, Union
 
-from pil_utils import BuildImage, Text2Image
-from pil_utils.types import ColorType, HAlignType
+from ...pil_utils import BuildImage, Text2Image
+from ...pil_utils.types import ColorType, HAlignType
 from PIL import Image, ImageFilter
 
 from ..config import config
