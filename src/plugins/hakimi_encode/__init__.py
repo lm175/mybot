@@ -53,7 +53,7 @@ hakimi_encode = on_command("南北绿豆", priority=5, block=True)
 async def _(arg: Message = CommandArg()):
     text = arg.extract_plain_text().strip()
     if not text:
-        await hakimi_encode.finish("请输入要编码的文本")
+        await hakimi_encode.reject("请输入要编码的文本")
     encoded_text = encode(text)
     await hakimi_encode.finish(f"编码结果:\n{encoded_text}")
 
