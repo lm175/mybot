@@ -47,25 +47,32 @@ def decode(input_code: str) -> str:
 from nonebot import on_command
 from nonebot.params import CommandArg
 from nonebot.adapters.onebot.v11 import Message
+from nonebot.typing import T_State
 
 hakimi_encode = on_command("南北绿豆", priority=5, block=True)
 @hakimi_encode.handle()
-async def _(arg: Message = CommandArg()):
-    text = arg.extract_plain_text().strip()
-    if not text:
-        await hakimi_encode.reject("请输入要编码的文本")
+async def _(state: T_State, arg: Message = CommandArg()):
+    if text := arg.extract_plain_text().strip():
+        state['text'] = text
+
+@hakimi_encode.got('text', prompt="请输入要编码的文本")
+async def _(state: T_State):
+    text = state['text']
     encoded_text = encode(text)
     await hakimi_encode.finish(f"编码结果:\n{encoded_text}")
 
 
 hakimi_decode = on_command("豆绿北南", priority=5, block=True)
 @hakimi_decode.handle()
-async def _(arg: Message = CommandArg()):
-    code = arg.extract_plain_text().strip()
-    if not code:
-        await hakimi_decode.finish("请输入要解码的文本")
+async def _(state: T_State, arg: Message = CommandArg()):
+    if code := arg.extract_plain_text().strip():
+        state['code'] = code
+
+@hakimi_decode.got('code', prompt="请输入要解码的文本")
+async def _(state: T_State):
+    code = state['code']
     try:
         decoded_text = decode(code)
-        await hakimi_decode.finish(f"解码结果:\n{decoded_text}")
     except ValueError as e:
         await hakimi_decode.finish(f"解码失败: {e}")
+    await hakimi_decode.finish(f"解码结果:\n{decoded_text}")
