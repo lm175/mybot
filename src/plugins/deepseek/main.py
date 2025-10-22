@@ -249,6 +249,8 @@ async def _(bot: Bot, event: MessageEvent, session: async_scoped_session):
 
                 # 回复
                 if reply_text and response_json:
+                    if not isinstance(reply_text, list):
+                        reply_text = [reply_text]
                     result_messages = []
                     response_json['text'] = []
                     for text in reply_text:
