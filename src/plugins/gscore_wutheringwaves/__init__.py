@@ -1,6 +1,7 @@
 from nonebot import on_command
 from nonebot.adapters.onebot.v11 import Bot, MessageEvent, Message, MessageSegment
 from nonebot.params import CommandArg
+from nonebot.permission import SUPERUSER
 
 from ..GenshinUID import handle_message
 from nonebot.plugin import PluginMetadata
@@ -78,3 +79,18 @@ async def _():
         ))
     await next_tower.send(msg)
 
+
+
+delete_images_cmd = on_command("ww删除深塔图片", priority=1, block=True, permission=SUPERUSER)
+@delete_images_cmd.handle()
+async def _(args: Message = CommandArg()):
+    data_dir = store.get_plugin_data_dir()
+    tower_dir = data_dir / "tower"
+    target_dir = data_dir / "tower" / args.extract_plain_text().strip()
+    if target_dir.exists():
+        for img_file in target_dir.iterdir():
+            img_file.unlink()
+        target_dir.rmdir()
+        await delete_images_cmd.finish(f"已删除深塔图片，路径：{target_dir}")
+    else:
+        await delete_images_cmd.finish(f"未找到指定路径的深塔图片：{target_dir}")
