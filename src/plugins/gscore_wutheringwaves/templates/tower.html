@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ area_data.Floor["1"].AreaName }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #E2E8F0;
+        }
+        
+        /* 自定义颜色类 */
+        .bg-light-card {
+            background-color: #171438;
+        }
+        
+        .bg-lighter-card {
+            background-color: #1E1B4B;
+        }
+        
+        .text-light {
+            color: #E2E8F0;
+        }
+        
+        .border-light {
+            border-color: #4a5568;
+        }
+    </style>
+</head>
+<body class="bg-black text-[#E2E8F0]">
+    <!-- 定义元素图标映射，使其在整个模板中可用 -->
+    {% set element_icons = {
+        0: "T_IconElementAttriPhysical",
+        1: "T_IconElementAttriIce",
+        2: "T_IconElementAttriFire", 
+        3: "T_IconElementAttriThunder",
+        4: "T_IconElementAttriWind",
+        5: "T_IconElementAttriLight",
+        6: "T_IconElementAttriDark"
+    } %}
+    
+    <div class="flex grid flex-col grid-cols-1 gap-2 m-4">
+        <!-- 标题和设置区域 -->
+        <div class="text-lg rounded-lg bg-light-card p-4">
+            <div class="flex">
+                {% set first_floor = area_data.Floor["1"] %}
+                <div class="shrink-0">ID: {{ area_data.PeriodId }} - {{ first_floor.AreaName }}</div>
+                <div class="flex justify-end items-center w-full text-sm">
+                    <div class="font-normal">Try HP</div>
+                    <label class="inline-flex relative items-center mx-1 cursor-pointer">
+                        <input id="switch" type="checkbox" class="sr-only peer">
+                        <label for="switch" class="hidden"></label>
+                        <div class="peer h-6 w-11 rounded-full border-2 border-light bg-transparent after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-indigo-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-green-300"></div>
+                    </label>
+                    <div class="font-normal pl-2">Misc</div>
+                    <label class="inline-flex relative items-center mx-1 cursor-pointer">
+                        <input id="switch" type="checkbox" class="sr-only peer">
+                        <label for="switch" class="hidden"></label>
+                        <div class="peer h-6 w-11 rounded-full border-2 border-light bg-transparent after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-indigo-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-green-300"></div>
+                    </label>
+                </div>
+            </div>
+            <div class="text-xs text-right pt-1 pr-2">This will try to find HP by codename.</div>
+        </div>
+        
+        <!-- 循环生成该区域的所有关卡 -->
+        {% for floor_id, floor_data in area_data.Floor.items() %}
+        <div class="rounded-lg bg-light-card p-4">
+            <!-- 获取第一个怪物的等级 -->
+            {% set first_monster = floor_data.Monsters.values() | list %}
+            {% if first_monster %}
+                {% set monster_level = first_monster[0].Level %}
+            {% else %}
+                {% set monster_level = "N/A" %}
+            {% endif %}
+            <div class="pt-2 font-bold text-center">{{area_data.AreaId}}-{{ floor_id }} {{ floor_data.Target[0] }}s/{{ floor_data.Target[1] }}s/{{ floor_data.Target[2] }}s Lv.{{ monster_level }} Cost: {{ floor_data.Cost }}</div>
+            <div class="flex pt-2">
+                <div class="my-2">推荐属性 |</div>
+                {% for element_id in floor_data.RecommendElement %}
+                <img loading="lazy" src="https://api.hakush.in/ww/UI/UIResources/Common/Image/IconElementAttri/{{ element_icons[element_id] }}.webp" class="m-1 my-auto rounded-full size-6">
+                {% endfor %}
+            </div>
+            <div class="grid grid-cols-1 gap-4 pt-4">
+                {% for buff_id, buff_data in floor_data.Buffs.items() %}
+                <div class="flex items-center p-4 rounded-lg bg-lighter-card">
+                    {% set icon_filename = buff_data.Icon.split('/')[-1].split('.')[0] %}
+                    <img loading="lazy" src="https://api.hakush.in/ww/UI/UIResources/Common/Image/IconAttribute/{{ icon_filename }}.webp" class="w-8 h-8 border-2 rounded-full border-light">
+                    <div class="pl-3">{{ buff_data.Desc|replace('<color=Light>', '<span style="color: #f8e56c;"><strong>')|replace('</color>', '</strong></span>')|safe }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="grid grid-cols-1 gap-4 pt-4">
+                <div class="p-4 rounded-lg bg-lighter-card">
+                    <div class="font-bold">挑战对象</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2">
+                        {% for monster_id, monster_data in floor_data.Monsters.items() %}
+                        <a class="flex p-2" href="/monster/{{ monster_id }}">
+                            {% set icon_filename = monster_data.Icon.split('/')[-1].split('.')[0] %}
+                            <img class="w-16 h-16" loading="lazy" src="https://api.hakush.in/ww/UI/UIResources/Common/Image/IconMonsterHead/{{ icon_filename }}.webp">
+                            <div class="flex flex-col p-2">
+                                <div class="flex items-center text-xs font-normal">
+                                    <div class="text-sm mr-1 my-auto">{{ monster_data.Name }}</div>
+                                    <img loading="lazy" src="https://api.hakush.in/ww/UI/UIResources/Common/Image/IconElementAttri/{{ element_icons[monster_data.Element] }}.webp" class="w-6 h-6 rounded-full">
+                                </div>
+                                <div class="flex flex-col text-xs pt-2"></div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

@@ -1,5 +1,5 @@
 from nonebot import on_command
-from nonebot.adapters.onebot.v11 import Bot, MessageEvent, Message
+from nonebot.adapters.onebot.v11 import Bot, MessageEvent, Message, MessageSegment
 from nonebot.params import CommandArg
 
 from ..GenshinUID import handle_message
@@ -25,3 +25,56 @@ async def _(bot: Bot, event: MessageEvent, args: Message = CommandArg()):
     if cmd := args.extract_plain_text():
         event.message = event.original_message = Message(f'ww{cmd}')
         await handle_message(bot, event)
+
+
+
+
+
+
+from .tower import generate_tower_images, get_period_data, get_period_id
+from nonebot import require
+require("nonebot_plugin_localstore")
+import nonebot_plugin_localstore as store
+
+next_tower = on_command("ww下期深塔", priority=1, block=True)
+
+@next_tower.handle()
+async def _():
+    current_period_id = await get_period_id()
+    next_period_id = str(int(current_period_id) + 1)
+
+    # 尝试从本地获取下一期深塔图片
+    data_dir = store.get_plugin_data_dir()
+    tower_dir = data_dir / "tower" / next_period_id
+    if tower_dir.exists() and any(tower_dir.iterdir()):
+        pics = []
+        for img_file in sorted(tower_dir.iterdir()):
+            with open(img_file, 'rb') as f:
+                pics.append(f.read())
+        next_period_data = await get_period_data(next_period_id)
+    else:
+        # 本地无图片，生成新图片
+        pics = await generate_tower_images(next_period_id)
+        next_period_data = await get_period_data(next_period_id)
+        # 保存图片到本地
+        tower_dir.mkdir(parents=True, exist_ok=True)
+        for idx, pic in enumerate(pics):
+            with open(tower_dir / f"area_{idx+1}.png", 'wb') as f:
+                f.write(pic)
+
+
+    msg = Message(MessageSegment.node_custom(
+        user_id=2854196310,
+        nickname="小助手",
+        content=f"深塔第{next_period_id}期\n" +
+                f"开放时间：{next_period_data.begin_dt} 至 {next_period_data.end_dt}"
+    ))
+
+    for pic in pics:
+        msg.append(MessageSegment.node_custom(
+            user_id=2854196310,
+            nickname="小助手",
+            content=Message(MessageSegment.image(pic))
+        ))
+    await next_tower.send(msg)
+
