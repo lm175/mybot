@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> slash </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-[#E2E8F0]">
+    <div class="grid grid-cols-1">
+        <div class="grid grid-cols-1 sm:grid-cols-6 m-4 overflow-hidden">
+            <div class="col-span-4 wep-background-image flex justify-center" style="background-image: url(&quot;https://api.hakush.in/ww/UI/UIResources/Common/Image/IconMowing/{{ relic.Icon.split('/')[-1].split('.')[0] }}.webp&quot;); background-size: 30%;">
+                <span id="char-name-info" class="char-name-info">
+                    <span class="char-name">
+                        {{ relic.Name }}
+                        <div class="stars flex">
+                            {% for i in range(relic.Rarity) %}
+                            <img loading="lazy" src="data:image/png;base64,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" class="star-icon">
+                            {% endfor %}
+                        </div>
+                        <div class="char-name-text">{{ relic.Name }}</div>
+                        <div>&nbsp;</div>
+                    </span>
+                </span>
+            </div>
+            <div class="col-span-2">
+                <div class="h-full p-4 gap-1 font-normal text-xs">
+                    <div class="row-span-2 flex flex-col self-end">
+                        <span class="text-2xl leading-5 font-bold">详情</span>
+                        <span class="text-base leading-5 text-indigo-500 font-bold">DETAILS</span>
+                    </div>
+                    <div class="flex py-2">
+                        {% for tag in relic.Tag %}
+                        <div class="bg-indigo-900 p-2 px-3 mr-2 rounded-full">{{ tag }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="pt-4 font-normal text-xs self-end py-2">
+                        {{ relic.Desc | replace('\n', '<br>') | replace('<color=#fee388>', '<span style="color: #fee388;"><strong>') | replace('</color>', '</strong></span>') | safe }}
+                    </div>
+                    <div class="pt-2 text-xs font-normal flex items-center">
+                        <div class="flex-grow bg bg-gray-500 h-px"></div>
+                    </div>
+                    <div class="font-normal text-xs self-end py-2">{{ relic.Bg }}</div>
+                    <div class="pt-2 text-xs font-normal flex items-center pb-8">
+                        <div class="flex-grow bg bg-gray-500 h-px"></div>
+                    </div>
+                    <div class="row-span-2 flex flex-col self-end pb-2">
+                        <span class="text-2xl leading-5 font-bold">获得途径</span>
+                        <span class="text-base leading-5 text-indigo-500 font-bold">SOURCE</span>
+                    </div>
+                    {% for source in relic.Source %}
+                    <div class="border p-2 my-2 border-gray-500">{{ source }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

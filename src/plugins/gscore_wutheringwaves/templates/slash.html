@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> slash </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-[#E2E8F0]">
+    <div class="p-4 rounded-lg" style="background-color: #171438;">
+        <div class="divide-y divide-slate-700">
+            <div class="pb-2 text-xl">ID: {{ data.PeriodId }} - {{ data.Title }}</div>
+            <div class="pt-2"></div>
+        </div>
+        
+        <div class="pt-4 font-bold">海域特性</div>
+        <div class="">{{ data.Desc | replace('\n', '<br>') | safe }}</div>
+        
+        <div class="pt-4 font-bold">挑战目标</div>
+        {% for i in range(data.ScoreStage | length) %}
+        <div class="flex">{{ data.ScoreStage[i] }} - 积分达到 {{ data.TargetScore[i] }}</div>
+        {% endfor %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+            {% for floor_id, floor_data in data.Floor.items() %}
+            <div class="p-4 rounded-lg" style="background-color: #1E1B4B;">
+                <div class="pt-2">
+                    <div class="my-auto mr-1">关卡特性</div>
+                    <div>{{ floor_data.Desc | replace('<color=#ffb04a>', '<span style="color: #ffb04a;"><strong>') | replace('</color>', '</strong></span>') | safe }}</div>
+                </div>
+                
+                <div class="pt-4">
+                    <div class="font-bold">挑战对象 (Lv.{{ floor_data.Level }})</div>
+                    <div class="grid grid-cols-1">
+                        {% for monster_id, monster_data in floor_data.Monsters.items() %}
+                        <a class="flex p-2" href="/monster/{{ monster_id }}">
+                            {% set icon_filename = monster_data.Icon.split('/')[-1].split('.')[0] %}
+                            <img class="w-16 h-16" loading="lazy" src="https://api.hakush.in/ww/UI/UIResources/Common/Image/IconMonsterHead/{{ icon_filename }}.webp">
+                            <div class="flex flex-col p-2">
+                                <div class="">{{ monster_data.Name }}</div>
+                                <div class="flex items-center text-xs font-normal">
+                                    {% set element_icons = {
+                                        0: "T_IconElementAttriPhysical",
+                                        1: "T_IconElementAttriIce",
+                                        2: "T_IconElementAttriFire", 
+                                        3: "T_IconElementAttriThunder",
+                                        4: "T_IconElementAttriWind",
+                                        5: "T_IconElementAttriLight",
+                                        6: "T_IconElementAttriDark"
+                                    } %}
+                                    <img loading="lazy" src="https://api.hakush.in/ww/UI/UIResources/Common/Image/IconElementAttri/{{ element_icons[monster_data.Element] }}.webp" class="w-6 h-6 rounded-full mt-1 mr-1">
+                                    <div class="ml-1">HP: {{ "%.0f"|format(monster_data.Life) }}</div>
+                                    <div class="flex flex-col my-auto font-normal z-0">
+                                        <a href="javascript:void(0)" class="group relative inline-block text-indigo-500 hover:text-red-500 duration-300 grow text-center p-2">+
+                                            <span class="z-[999] whitespace-nowrap absolute hidden group-hover:flex left-1/2 -translate-x-1/2 w-auto px-2 py-1 rounded-lg text-center text-white text-sm before:content-[''] before:absolute before:top-1/2 before:right-[100%] before:-translate-y-1/2" style="background-color: #171438;">
+                                                <div class="text-left">
+                                                    #{{ monster_id }} <br>
+                                                    {{ monster_data.Name }} <label class="text-yellow-400 ml-1">Lv.{{ monster_data.Level }}</label> <br>
+                                                    基础生命值 <label class="text-yellow-400 ml-1">{{ "%.4f"|format(monster_data.Life) }}</label> <br>
+                                                    基础攻击力 <label class="text-yellow-400 ml-1">{{ "%.4f"|format(monster_data.Atk) }}</label> <br>
+                                                    基础防御力 <label class="text-yellow-400 ml-1">{{ "%.1f"|format(monster_data.Def) }}</label> <br>
+                                                    共振度上限 <label class="text-yellow-400 ml-1">{{ "%.2f"|format(monster_data.HardnessMax) }}</label> <br>
+                                                    狂暴上限 <label class="text-yellow-400 ml-1">{{ "%.2f"|format(monster_data.RageMax) }}</label>
+                                                </div>
+                                            </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

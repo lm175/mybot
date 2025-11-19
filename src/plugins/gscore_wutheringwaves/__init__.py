@@ -77,6 +77,12 @@ async def _():
             nickname="小助手",
             content=Message(MessageSegment.image(pic))
         ))
+    
+    msg.append(MessageSegment.node_custom(
+        user_id=2854196310,
+        nickname="小助手",
+        content="数据来源：https://ww2.hakush.in/"
+    ))
     await next_tower.send(msg)
 
 
@@ -85,7 +91,6 @@ delete_images_cmd = on_command("ww删除深塔图片", priority=1, block=True, p
 @delete_images_cmd.handle()
 async def _(args: Message = CommandArg()):
     data_dir = store.get_plugin_data_dir()
-    tower_dir = data_dir / "tower"
     target_dir = data_dir / "tower" / args.extract_plain_text().strip()
     if target_dir.exists():
         for img_file in target_dir.iterdir():
@@ -94,3 +99,29 @@ async def _(args: Message = CommandArg()):
         await delete_images_cmd.finish(f"已删除深塔图片，路径：{target_dir}")
     else:
         await delete_images_cmd.finish(f"未找到指定路径的深塔图片：{target_dir}")
+    
+
+from .slash import generate_slash_images, get_period_id as get_slash_period_id
+
+next_slash = on_command("ww下期海墟", priority=1, block=True)
+
+@next_slash.handle()
+async def _():
+    current_period_id = await get_slash_period_id()
+    next_period_id = str(int(current_period_id) + 1)
+
+    pics = await generate_slash_images(next_period_id)
+
+    msg = Message()
+    for pic in pics:
+        msg.append(MessageSegment.node_custom(
+            user_id=2854196310,
+            nickname="小助手",
+            content=Message(MessageSegment.image(pic))
+        ))
+    msg.append(MessageSegment.node_custom(
+        user_id=2854196310,
+        nickname="小助手",
+        content="数据来源：https://ww2.hakush.in/"
+    ))
+    await next_slash.send(msg)
