@@ -1,7 +1,8 @@
 from typing import Annotated, Optional, Union
 
 from nonebot import on_command, require
-from nonebot.adapters import Event, Message
+# from nonebot.adapters import Event, Message
+from nonebot.adapters.onebot.v11 import Message, MessageEvent, MessageSegment
 from nonebot.params import CommandArg
 from nonebot.plugin import PluginMetadata, get_loaded_plugins
 
@@ -31,7 +32,7 @@ help = on_command("help", aliases={"帮助", "功能", "菜单"}, block=True)
 
 
 @help.handle()
-async def _(event: Event, user_id: UserId, msg: Message = CommandArg()):
+async def _(event: MessageEvent, user_id: UserId, msg: Message = CommandArg()):
     keyword = msg.extract_plain_text().strip()
 
     help_msg = None
@@ -43,9 +44,28 @@ async def _(event: Event, user_id: UserId, msg: Message = CommandArg()):
         if isinstance(help_msg, str):
             await help.finish(help_msg)
         else:
-            await UniMessage.image(raw=help_msg).send()
-            if not keyword:
-                await help.send("可以发送“/help 插件名”查看插件使用方法哦")
+            if keyword:
+                await UniMessage.image(raw=help_msg).send()
+            else:
+                await help.send(MessageSegment.node_custom(
+                    user_id=event.self_id,
+                    nickname="小助手",
+                    content=Message(MessageSegment.image(help_msg))
+                ) + MessageSegment.node_custom(
+                    user_id=event.self_id,
+                    nickname="小助手",
+                    content=(
+                        "发送“help 插件名”可查看对应插件的详细帮助\n"
+                        "例：help AI对话"
+                    ),
+                ) + MessageSegment.node_custom(
+                    user_id=event.self_id,
+                    nickname="小助手",
+                    content=(
+                        "群管理员可发送“启用/禁用插件 插件名”进行管理\n"
+                        "例：启用插件 AI对话"
+                    ),
+                ))
 
 
 async def get_help_msg(user_id: str, keyword: str = "") -> Optional[Union[str, bytes]]:
