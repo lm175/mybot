@@ -106,12 +106,17 @@ class SlashImageGenerator(ImageGenerator):
         pics.append(pic)
 
         
-        # 获取第二关信物数据
-        second_stage_data = sorted_values[1]
-        slash_tokens: list[dict[str, int]] = second_stage_data.get("LevelPassReward", [])
+        # 获取信物数据
+        slash_tokens: list[dict[str, int]] = []
+        for stage_data in sorted_values:
+            if pass_reward := stage_data.get("LevelPassReward"):
+                slash_tokens.extend(pass_reward)
+                
         for token in slash_tokens:
             item_id = str(token.get("Key"))
             item_data = await self.fetch_item_data_from_local()
+            if item_id not in item_data:
+                item_data = await self.fetch_item_data_from_api()
             if item_id in item_data:
                 pic = await template_to_pic(
                     template_path=template_path,
