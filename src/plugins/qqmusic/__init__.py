@@ -27,20 +27,64 @@ __plugin_meta__ = PluginMetadata(
 )
 
 
-url = "https://sdkapi.hhlqilongzhu.cn/api/QQmusic/"
+# url = "https://sdkapi.hhlqilongzhu.cn/api/QQmusic/"
 
+
+# async def get_song_list(name) -> list[dict[str, str]]:
+#     # url = "https://api.dragonlongzhu.cn/api/dg_QQmusicflac.php"
+#     params = {
+#         "msg": name,
+#         "type": "json",
+#         "key": config.qqmusic_api_key
+#     }
+#     try:
+#         async with AsyncClient() as client:
+#             res = await client.get(url=url, params=params)
+#         return res.json()["data"]
+#     except Exception as e:
+#         logger.error(e)
+#         return []
+
+# async def get_song(name, n=None) -> dict:
+#     params = {
+#         "msg": name,
+#         "n": n,
+#         "type": "json",
+#         "key": config.qqmusic_api_key
+#     }
+#     try:
+#         async with AsyncClient() as client:
+#             res = await client.get(url=url, params=params)
+#         return res.json()["data"]
+#     except Exception as e:
+#         logger.error(e)
+#         return {}
+
+
+url = "https://oiapi.net/api/QQ_Music"
 
 async def get_song_list(name) -> list[dict[str, str]]:
-    # url = "https://api.dragonlongzhu.cn/api/dg_QQmusicflac.php"
     params = {
         "msg": name,
-        "type": "json",
+        "n": 0,
         "key": config.qqmusic_api_key
     }
     try:
         async with AsyncClient() as client:
             res = await client.get(url=url, params=params)
-        return res.json()["data"]
+        results = []
+        for i, d in enumerate(res.json()["data"]):
+            song_name = d['song']
+            singers = ''
+            for singer in d['singer']:
+                singers += singer + '、'
+            results.append({
+                "序号": i + 1,
+                "歌名": song_name,
+                "歌手": singers
+            })
+        return results
+
     except Exception as e:
         logger.error(e)
         return []
@@ -49,7 +93,6 @@ async def get_song(name, n=None) -> dict:
     params = {
         "msg": name,
         "n": n,
-        "type": "json",
         "key": config.qqmusic_api_key
     }
     try:
@@ -105,12 +148,19 @@ async def send_music(event: MessageEvent, state: T_State, name: str = ArgPlainTe
     n = int(n[0])
 
     data = await get_song(name, n)
+    # await qqMusic.send(MessageSegment.music_custom(
+    #     url=data['link'],
+    #     audio=data['music_url'],
+    #     title=data['song_name'],
+    #     content=data["song_singer"],
+    #     img_url=data['cover']
+    # ))
     await qqMusic.send(MessageSegment.music_custom(
-        url=data['link'],
-        audio=data['music_url'],
-        title=data['song_name'],
-        content=data["song_singer"],
-        img_url=data['cover']
+        url=data['url'],
+        audio=data['music'],
+        title=data['song'],
+        content=data["singer"],
+        img_url=data['picture']
     ))
     user_id = str(event.user_id)
     cache_dict[user_id] = data
@@ -134,9 +184,9 @@ async def handle_cache(event: MessageEvent):
     song_data = cache_dict[user_id]
     msg = (event.get_message()).extract_plain_text()
     if "语音" in msg:
-        await qqRecord.send(MessageSegment.record(song_data['music_url']))
+        await qqRecord.send(MessageSegment.record(song_data['music']))
     elif "直链" in msg:
-        await qqLink.send(song_data['music_url'])
+        await qqLink.send(song_data['music'])
     else:
         pass
 
