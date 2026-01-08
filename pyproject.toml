@@ -68,6 +68,7 @@ plugins = [
     "nonebot_plugin_setu4",
     "nonebot_plugin_miragetank",
     "nonebot_plugin_makemidi",
+    "nonebot_plugin_apscheduler",
 ]
 plugin_dirs = ["src/plugins"]
 adapters = [
