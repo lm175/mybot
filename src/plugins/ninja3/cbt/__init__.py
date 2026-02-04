@@ -119,7 +119,7 @@ async def handle_caculate(event: MessageEvent):
         current_list[i] = int(receive_list[i])
 
     # 计算
-    end_date = datetime(2025, 9, 4, 5)
+    end_date = datetime(2026, 3, 5, 5)
     days, weeks = await get_date(end_date)
     current_resources = CurrentResources(*current_list)
     expected_resources = ExpectedResources(*(await caculator(current_list, days, weeks)))
